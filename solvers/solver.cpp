@@ -1,6 +1,8 @@
 #include <iostream>
 #include <fstream>
 
+#include <algorithm>
+
 #include "basic_algorithm.cpp"
 //#include "other_algorithm.cpp"
 
@@ -11,18 +13,25 @@ void read_board_info(const std::string& path, double& rating, std::string& lette
     file >> rating >> letters;
 }
 
-Trie load_word_trie(const std::string& path) {
-    std::ifstream file(path);
-    if (!file)
-        throw std::runtime_error("Failed to open word list file");
+Trie load_word_trie() {
+    const char* word_lists[] = {
+        "data\\NWL2023.txt",
+        "data\\long_words.txt"
+    };
 
     Trie trie;
-    std::string line;
 
-    while (std::getline(file, line)) {
-        size_t spacePos = line.find(' ');
-        if (spacePos != std::string::npos && spacePos > 3) {
-            trie.insert(line.substr(0, spacePos));
+    for (const char* path : word_lists) {
+        std::ifstream file(path);
+        if (!file) {
+            throw std::runtime_error(std::string("Failed to open word list file: ") + path);
+        }
+
+        std::string word;
+        while (std::getline(file, word)) {
+            if (word.size() > 3) {
+                trie.insert(word);
+            }
         }
     }
 
@@ -30,8 +39,8 @@ Trie load_word_trie(const std::string& path) {
 }
 
 int main(int argc, char* argv[]) {
-    if (argc != 4) {
-        std::cerr << "Usage:  <board_info.txt> <word_list.txt> <solution.txt>" << std::endl;
+    if (argc != 3) {
+        std::cerr << "Usage:  <board_info.txt> <solution.txt>" << std::endl;
         return 1;
     }
 
@@ -41,12 +50,16 @@ int main(int argc, char* argv[]) {
 
         read_board_info(argv[1], rating, letters);
 
-        Trie wordTrie = load_word_trie(argv[2]);
+        Trie wordTrie = load_word_trie();
 
-        std::unordered_set<std::string> solution = basic_solve_board(wordTrie, letters);
+        std::unordered_set<std::string> words = basic_solve_board(wordTrie, letters);
 
-        std::ofstream out(argv[3]);
-        for (const auto& word : solution) {
+        // sort found words
+        std::vector<std::string> sorted_words(words.begin(), words.end());
+        std::sort(sorted_words.begin(), sorted_words.end());
+
+        std::ofstream out(argv[2]);
+        for (const auto& word : sorted_words) {
             out << word << std::endl;
         }
 

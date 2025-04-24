@@ -130,12 +130,9 @@ if __name__ == "__main__":
     browser.maximize_window()
     browser.set_page_load_timeout(20)
     
-    data_dir = "data"
     temp_dir = tempfile.mkdtemp()
 
     try:
-        word_list_path = os.path.join(data_dir, "NWL2023.txt")
-
         board_info_path = os.path.join(temp_dir, "board_info.txt")
         fetch_board_info(browser, board_info_path)
 
@@ -143,7 +140,6 @@ if __name__ == "__main__":
         subprocess.run([
             "solver.exe",
             board_info_path,
-            word_list_path,
             solution_path
         ], check=True)
 
