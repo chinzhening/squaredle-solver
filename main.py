@@ -141,7 +141,7 @@ if __name__ == "__main__":
 
         solution_path = os.path.join(temp_dir, "solution.txt")
         subprocess.run([
-            "Solver.exe",
+            "solver.exe",
             board_info_path,
             word_list_path,
             solution_path
