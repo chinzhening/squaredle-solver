@@ -10,7 +10,6 @@ from bs4.element import Tag
 
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -113,6 +112,8 @@ def input_solution(browser : webdriver.Chrome, solution_path : str) -> None:
 
         except Exception as e:
             logging.info(f"Inputting Error: {e}")
+        
+        logging.info(f"Words found... {len(words)}")
 
 def fetch_results(browser : webdriver.Chrome) -> str:
     actions = ActionChains(browser)
@@ -121,7 +122,7 @@ def fetch_results(browser : webdriver.Chrome) -> str:
     actions.move_to_element(share).click(share).perform()
 
     result = browser.find_element(By.ID, "shareContent").get_attribute("textContent")
-    print(result)
+    logging.info(f"\n{result}")
 
 if __name__ == "__main__":
     # Selenium setup
