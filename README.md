@@ -26,7 +26,7 @@ pip install -r requirements.txt
 ```
 3. Compile C++ solver:
 ```bash
-g++ -std=c++17 -O2 -o squaredle-solver.exe solver/squaredle-solver.cpp solver/Trie.cpp 
+g++ -std=c++17 -O2 -o solver.exe solvers/solver.cpp solvers/Trie.cpp 
 ```
 
 # usage

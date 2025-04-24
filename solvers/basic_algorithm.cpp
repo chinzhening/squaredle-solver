@@ -1,6 +1,3 @@
-#include <iostream>
-#include <fstream>
-
 #include <functional>
 #include <string>
 #include <unordered_map>
@@ -9,32 +6,8 @@
 
 #include "Trie.h"
 
-void readBoardInfo(const std::string& path, double& rating, std::string& letters) {
-    std::ifstream file(path);
-    if (!file)
-        throw std::runtime_error("Failed to open board_info.txt");
-    file >> rating >> letters;
-}
-
-Trie loadWordTrie(const std::string& path) {
-    std::ifstream file(path);
-    if (!file)
-        throw std::runtime_error("Failed to open word list file");
-
-    Trie trie;
-    std::string line;
-
-    while (std::getline(file, line)) {
-        size_t spacePos = line.find(' ');
-        if (spacePos != std::string::npos && spacePos > 3) {
-            trie.insert(line.substr(0, spacePos));
-        }
-    }
-
-    return trie;
-}
-
-std::unordered_set<std::string> solveBoard(Trie& trie, const std::string& letters) {
+// Backtracking algorithm with dfs
+std::unordered_set<std::string> basic_solve_board(Trie& trie, const std::string& letters) {
     std::unordered_set<std::string> found;
     std::string path;
 
@@ -45,7 +18,6 @@ std::unordered_set<std::string> solveBoard(Trie& trie, const std::string& letter
         board[i / N][i % N] = letters[i];
     }
 
-    // Backtracking algorithm
     std::function<void(int, int, TrieNode*, std::unordered_set<int>&)> dfs = 
         [&] (int x, int y, TrieNode* node, std::unordered_set<int>& visited) {
             // Out of bounds
@@ -99,35 +71,4 @@ std::unordered_set<std::string> solveBoard(Trie& trie, const std::string& letter
     }
 
     return found;
-}
-
-int main(int argc, char* argv[]) {
-    if (argc != 4) {
-        std::cerr << "Usage: squaredle-solver <board_info.txt> <word_list.txt> <solution.txt>" << std::endl;
-        return 1;
-    }
-
-    try {
-        double rating;
-        std::string letters;
-
-        readBoardInfo(argv[1], rating, letters);
-
-        Trie wordTrie = loadWordTrie(argv[2]);
-
-        std::unordered_set<std::string> solution = solveBoard(wordTrie, letters);
-
-        std::ofstream out(argv[3]);
-        for (const auto& word : solution) {
-            out << word << std::endl;
-        }
-
-
-        return 0;
-    
-    } catch (const std::exception& ex) {
-        std::cerr << "Error: " << ex.what() << '\n';
-        return 1;
-    }
-
 }
