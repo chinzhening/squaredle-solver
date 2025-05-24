@@ -3,6 +3,7 @@ Write-Host "Compiling C++ files..."
 $src = @(
     "src\main.cpp",
     "src\basic_solver.cpp",
+    "src\utils.cpp"
     "src\trie.cpp"
 )
 

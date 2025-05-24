@@ -1,8 +1,5 @@
 #include "solver.h"
 
-/**
- * Basic backtracking algorithm.
- */
 std::unordered_set<std::string> basic_solve_board(Trie& trie, const std::string& letters, int size) {
     std::unordered_set<std::string> found;
     std::string path;
