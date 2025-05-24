@@ -46,6 +46,8 @@ for ($i = 1; $i -le $total; $i++) {
     $inFile = "tests/$i.in"
     if (Test-Path $inFile) {
         $output = & .\build\main.exe $inFile
-        Write-Host $output
+        $actualOutput = $output -join "`n"
+        Write-Host $actualOutput
     }
+    Write-host "`n"
 }

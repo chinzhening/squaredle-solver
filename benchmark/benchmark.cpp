@@ -25,6 +25,7 @@ void Benchmark::increment_recursion() { ++recursion_count; }
 void Benchmark::increment_backtrack() { ++backtrack_count; }
 size_t Benchmark::get_recursion_count() const { return recursion_count; }
 size_t Benchmark::get_backtrack_count() const { return backtrack_count; }
+size_t Benchmark::get_duration_ns() const { return std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count(); }
 
 
 #else
@@ -39,5 +40,6 @@ void Benchmark::increment_recursion() {}
 void Benchmark::increment_backtrack() {}
 size_t Benchmark::get_recursion_count() const { return 0; }
 size_t Benchmark::get_backtrack_count() const { return 0; }
+size_t Benchmark::get_duration_ns() const { return 0; }
 
 #endif

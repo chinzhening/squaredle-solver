@@ -39,12 +39,27 @@ int main(int argc, char* argv[]) {
 
         std::unordered_set<std::string> words;
         #ifdef ENABLE_BENCHMARKING
-            Benchmark bm;
-            bm.reset_counters();
-            bm.start();
-            words = basic_solve_board(wordTrie, letters, boardSize, &bm);
-            bm.stop();
-            bm.report();
+            int iterations = 1000;
+
+            size_t total_time_ns = 0;
+            size_t total_recursions = 0;
+            size_t total_backtracks = 0;
+            for (int i = 0; i < iterations; i++) {
+                Benchmark bm;
+                bm.reset_counters();
+                bm.start();
+                words = basic_solve_board(wordTrie, letters, boardSize, &bm);
+                bm.stop();
+                
+                total_time_ns += bm.get_duration_ns();
+                total_recursions += bm.get_recursion_count();
+                total_backtracks += bm.get_backtrack_count();
+            }
+            std::cout << "Test " << letters << " " << boardSize << std::endl;
+            std::cout << "Average over " << iterations << " runs:\n";
+            std::cout << "Time: " << (total_time_ns / iterations) << " ns\n";
+            std::cout << "Recursions: " << (total_recursions / iterations) << "\n";
+            std::cout << "Backtracks: " << (total_backtracks / iterations) << "\n";
         #else
             words = basic_solve_board(wordTrie, letters, boardSize, nullptr);
 

@@ -16,6 +16,8 @@ public:
     size_t get_recursion_count() const;
     size_t get_backtrack_count() const;
 
+    size_t get_duration_ns() const;
+
 private:
     std::chrono::high_resolution_clock::time_point start_time, end_time;
     size_t recursion_count = 0;
