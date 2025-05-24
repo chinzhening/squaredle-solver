@@ -1,14 +1,14 @@
 #!/bin/bash
 
+set -e  # Exit immediately on error
+
 echo "Compiling C++ files..."
 
-SRC="src/main.cpp src/basic_solver.cpp src/utils.cpp src/trie.cpp"
-OUT="main.exe"
+SRC_DIR="src"
+SRC_FILES="$SRC_DIR/main.cpp $SRC_DIR/basic_solver.cpp $SRC_DIR/utils.cpp $SRC_DIR/trie.cpp"
+OUT_FILE="main"
 
-g++ -std=c++17 -O2 $SRC -o $OUT
+# Compile
+g++ -std=c++17 -O2 $SRC_FILES -o $OUT_FILE
 
-if [ $? -eq 0 ]; then
-    echo "Build successful: $OUT"
-else
-    echo "Build failed with errors."
-fi
+echo "Build successful: $OUT_FILE"
