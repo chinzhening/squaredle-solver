@@ -1,5 +1,3 @@
-#include <bitset>
-
 #include "solver.h"
 
 std::unordered_set<std::string> basic_solve_board(Trie& trie, const std::string& letters, int size, Benchmark* bm) {
