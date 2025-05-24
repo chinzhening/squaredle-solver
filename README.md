@@ -67,8 +67,7 @@ python main.py
 .
 ├── LICENSE
 ├── README.md
-├── build.ps1              # build script
-├── build.sh
+├── CMakeLists.txt
 ├── data
 │   ├── NWL2023.txt
 │   └── long_words.txt
@@ -79,7 +78,10 @@ python main.py
 │   ├── main.cpp           # entry point
 │   ├── solver.h
 │   ├── trie.cpp
-│   └── trie.h
+│   ├── trie.h
+│   ├── config.h
+│   ├── utils.cpp
+│   └── utils.h
 ├── test.ps1               # test script
 ├── test.sh
 └── tests
