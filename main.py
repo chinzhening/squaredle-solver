@@ -64,7 +64,8 @@ def fetch_board_info(browser : webdriver.Chrome, path : str) -> None:
     soup = BeautifulSoup(browser.page_source, "html.parser")
 
     rating = sum(parse_star(star) for star in soup.find("div", class_="p difficultyNote").find_all("svg"))
-    letters = "".join(t.find(class_="unnecessaryWrapper").contents[0] for t in soup.find("div", class_="board").find_all("div", class_="letter").map(lambda it: "_" if it == " " else it))
+    letters = "".join(t.find(class_="unnecessaryWrapper").contents[0] for t in soup.find("div", class_="board").find_all("div", class_="letter"))
+    letters = letters.replace(" ", "_")
     
     board_size = None
     match len(letters):
@@ -76,10 +77,10 @@ def fetch_board_info(browser : webdriver.Chrome, path : str) -> None:
 
     logging.info(f"Rating: {rating}")
     logging.info(f"Board: {letters}")
-    logging.info(f"Board size: {board_size}")
+    logging.info(f"Boardsize: {board_size}")
 
     with open(path, "w") as f:
-        f.write(f"{rating} {letters}\n")
+        f.write(f"{rating} {letters} {board_size}\n")
 
 def input_solution(browser : webdriver.Chrome, solution_path : str) -> None:
     
