@@ -32,12 +32,12 @@ pip install -r requirements.txt
 On Windows (PowerShell):
 ```powershell
 .\build.ps1
-.\tests.ps1
+.\test.ps1
 ```
 On Unix/macOS:
 ```bash
 ./build.sh
-./tests.ps1
+./test.ps1
 ```
 
 # usage
