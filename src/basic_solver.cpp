@@ -2,7 +2,9 @@
 
 std::unordered_set<std::string> basic_solve_board(Trie& trie, const std::string& letters, int size, Benchmark* bm) {
     std::unordered_set<std::string> found;
-    std::string path;
+    
+    char buffer[20];
+    int path_len = 0;
 
     const int N = size;  
     std::vector<std::vector<char>> board(N, std::vector<char>(N));
@@ -45,12 +47,12 @@ std::unordered_set<std::string> basic_solve_board(Trie& trie, const std::string&
 
             visited[x * N + y] = true;
 
-            path.push_back(c);
+            buffer[path_len++] = c;
             node = node->children[c];
 
             // Add valid word to result
-            if (node->isEnd && path.length() >= 4) {
-                found.insert(path);
+            if (node->isEnd && path_len >= 4) {
+                found.insert(std::string(buffer, path_len));
             }
 
             // Search neighbors
@@ -58,7 +60,7 @@ std::unordered_set<std::string> basic_solve_board(Trie& trie, const std::string&
                 dfs(nx, ny, node, visited);
             }
 
-            path.pop_back();
+            --path_len;
             visited[x * N + y] = false;
             if (bm) bm->increment_backtrack();
         };
