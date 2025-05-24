@@ -21,30 +21,53 @@ cd squaredle-solver
 2. **Install the dependencies:** recommendation is to use a virtual environment
 ```bash
 python -m venv venv
+# on Windows
 .\venv\Scripts\activate
+# on Unix/macOS
+source venv/bin/activate
+
 pip install -r requirements.txt
 ```
-3. Compile C++ solver:
+3. Compile C++ solver and run the tests
+On Windows (PowerShell):
+```powershell
+.\build.ps1
+.\tests.ps1
+```
+On Unix/macOS:
 ```bash
-g++ -std=c++17 -O2 -o solver.exe solvers/solver.cpp solvers/Trie.cpp 
+./build.sh
+./tests.ps1
 ```
 
 # usage
 Run the python script
 ```bash
+.\venv\Scripts\activate
 python main.py
 ```
 
 # project structure
 ```
 .
-├── main.py                   # Python script (entry)
-├── solver/
-│   ├── squaredle-solver.cpp # C++ driver code
-│   ├── Trie.cpp/.h          # Trie implementation
-│   └── utils.cpp/.h         # Word loading, helpers
-├── data/
-│   └── nwl2023.txt          # Scrabble dictionary word list
-├── requirements.txt         # Python dependencies
-└── README.md
+├── LICENSE
+├── README.md
+├── build.ps1              # build script
+├── build.sh
+├── data
+│   ├── NWL2023.txt
+│   └── long_words.txt
+├── main.py                # main script
+├── requirements.txt
+├── src
+│   ├── basic_solver.cpp
+│   ├── main.cpp           # entry point
+│   ├── solver.h
+│   ├── trie.cpp
+│   └── trie.h
+├── test.ps1               # test script
+├── test.sh
+└── tests
+    └── xp
+
 ```
