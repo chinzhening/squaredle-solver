@@ -22,42 +22,27 @@ cd squaredle-solver
 2. **Install the dependencies:** recommendation is to use a virtual environment
 ```bash
 python -m venv venv
-# on Windows
+
 .\venv\Scripts\activate
-# on Unix/macOS
-source venv/bin/activate
 
 pip install -r requirements.txt
 ```
 3. Build the C++ solver using CMake:
 
 Create a build directory, run CMake, and build the project.
-```bash
-mkdir build
-cd build
-
-# Configure the project
-cmake ..
-
-# Build the executable
-cmake --build .
+```powershell
+.\build.ps1
 ```
 4. Run tests
 
 On Windows (Powershell):
 ```powershell
-.\venv\Scripts\Activate.ps1
 .\test.ps1
-```
-On Unix/macOS:
-```bash
-source venv/bin/activate
-./test.sh
 ```
 
 # usage
 Run the python script
-```bash
+```powershell
 .\venv\Scripts\activate
 python main.py
 ```

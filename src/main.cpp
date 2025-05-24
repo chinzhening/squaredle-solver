@@ -14,6 +14,7 @@
 #include "solver.h"
 #include "utils.h"
 
+#include "benchmark.h"
 
 int main(int argc, char* argv[]) {
     /**
@@ -36,24 +37,35 @@ int main(int argc, char* argv[]) {
 
         Trie wordTrie = load_word_trie();
 
-        std::unordered_set<std::string> words = basic_solve_board(wordTrie, letters, boardSize);
+        std::unordered_set<std::string> words;
+        #ifdef ENABLE_BENCHMARKING
+            Benchmark bm;
+            bm.reset_counters();
+            bm.start();
+            words = basic_solve_board(wordTrie, letters, boardSize, &bm);
+            bm.stop();
+            bm.report();
+        #else
+            words = basic_solve_board(wordTrie, letters, boardSize, nullptr);
 
-        // Sort found words for IO
-        std::vector<std::string> sorted_words(words.begin(), words.end());
-        std::sort(sorted_words.begin(), sorted_words.end());
+            // Sort found words for IO
+            std::vector<std::string> sorted_words(words.begin(), words.end());
+            std::sort(sorted_words.begin(), sorted_words.end());
 
-        if (argc == 3){
-            std::ofstream out(argv[2]);
-            for (const auto& word : sorted_words) {
-                out << word << std::endl;
+            
+            if (argc == 3){
+                std::ofstream out(argv[2]);
+                for (const auto& word : sorted_words) {
+                    out << word << std::endl;
+                }
+            } else if (argc == 2) {
+                for (const auto& word : sorted_words) {
+                    std::cout << word << std::endl;
+                }
             }
-        } else if (argc == 2) {
-            for (const auto& word : sorted_words) {
-                std::cout << word << std::endl;
-            }
-        }
-        
-        return 0;
+            
+            return 0;
+        #endif
     
     } catch (const std::exception& ex) {
         std::cerr << "Error: " << ex.what() << '\n';

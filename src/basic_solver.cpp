@@ -1,6 +1,6 @@
 #include "solver.h"
 
-std::unordered_set<std::string> basic_solve_board(Trie& trie, const std::string& letters, int size) {
+std::unordered_set<std::string> basic_solve_board(Trie& trie, const std::string& letters, int size, Benchmark* bm) {
     std::unordered_set<std::string> found;
     std::string path;
 
@@ -13,6 +13,7 @@ std::unordered_set<std::string> basic_solve_board(Trie& trie, const std::string&
 
     std::function<void(int, int, TrieNode*, std::unordered_set<int>&)> dfs = 
         [&] (int x, int y, TrieNode* node, std::unordered_set<int>& visited) {
+            if (bm) bm->increment_recursion();
             // Out of bounds
             if (x < 0 || y < 0) {
                 return;
@@ -52,7 +53,8 @@ std::unordered_set<std::string> basic_solve_board(Trie& trie, const std::string&
 
             path.pop_back();
             visited.erase(x * N + y);
-    };
+            if (bm) bm->increment_backtrack();
+        };
 
     std::unordered_set<int> visited;
 
