@@ -11,7 +11,6 @@
 #include <fstream>
 #include <iostream>
 
-#include "benchmark.h"
 #include "solver.h"
 #include "utils.h"
 

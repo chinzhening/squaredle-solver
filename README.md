@@ -10,6 +10,7 @@ It scrapes the board from the website, preprocesses it, then solves the board us
 - Selenium
 - BeautifulSoup4
 - `webdriver-manager`
+- CMake: https://cmake.org/download/
 
 ## installation
 1. **Clone this repository:**
@@ -28,16 +29,30 @@ source venv/bin/activate
 
 pip install -r requirements.txt
 ```
-3. Compile C++ solver and run the tests
-On Windows (PowerShell):
+3. Build the C++ solver using CMake:
+
+Create a build directory, run CMake, and build the project.
+```bash
+mkdir build
+cd build
+
+# Configure the project
+cmake ..
+
+# Build the executable
+cmake --build .
+```
+4. Run tests
+
+On Windows (Powershell):
 ```powershell
-.\build.ps1
+.\venv\Scripts\Activate.ps1
 .\test.ps1
 ```
 On Unix/macOS:
 ```bash
-./build.sh
-./test.ps1
+source venv/bin/activate
+./test.sh
 ```
 
 # usage

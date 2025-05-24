@@ -27,7 +27,7 @@ for i in $(seq 1 $total); do
         echo -n "Test case $i/$total: "
 
         # Run the program with a timeout to prevent hanging
-        actual_output=$(timeout 5s ./main "$in_file" 2>&1)
+        actual_output=$(timeout 5s ./build/main "$in_file" 2>&1)
         exit_code=$?
 
         if [[ $exit_code -ne 0 ]]; then

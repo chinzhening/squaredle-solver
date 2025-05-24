@@ -35,7 +35,7 @@ for ($i = 1; $i -le $total; $i++) {
     $outFile = "tests/$i.out"
 
     if ((Test-Path $inFile) -and (Test-Path $outFile)) {
-        $actualOutputLines = & .\main.exe $inFile
+        $actualOutputLines = & .\build\main.exe $inFile
         $actualOutput = $actualOutputLines -join "`n"
 
         $expectedOutput = Get-Content $outFile -Raw
