@@ -1,18 +1,14 @@
-#include <functional>
-#include <string>
-#include <unordered_map>
-#include <unordered_set>
-#include <vector>
+#include "solver.h"
 
-#include "Trie.h"
-
-// Backtracking algorithm with dfs
-std::unordered_set<std::string> basic_solve_board(Trie& trie, const std::string& letters) {
+/**
+ * Basic backtracking algorithm.
+ */
+std::unordered_set<std::string> basic_solve_board(Trie& trie, const std::string& letters, int size) {
     std::unordered_set<std::string> found;
     std::string path;
 
-    const int N = 4;  
-    char board[N][N]; 
+    const int N = size;  
+    std::vector<std::vector<char>> board(N, std::vector<char>(N));
 
     for (int i = 0; i < N * N; ++i) {
         board[i / N][i % N] = letters[i];

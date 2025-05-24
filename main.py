@@ -64,10 +64,19 @@ def fetch_board_info(browser : webdriver.Chrome, path : str) -> None:
     soup = BeautifulSoup(browser.page_source, "html.parser")
 
     rating = sum(parse_star(star) for star in soup.find("div", class_="p difficultyNote").find_all("svg"))
-    letters = "".join(t.find(class_="unnecessaryWrapper").contents[0] for t in soup.find("div", class_="board").find_all("div", class_="letter"))
+    letters = "".join(t.find(class_="unnecessaryWrapper").contents[0] for t in soup.find("div", class_="board").find_all("div", class_="letter").map(lambda it: "_" if it == " " else it))
+    
+    board_size = None
+    match len(letters):
+        case 9: board_size = 3
+        case 16: board_size = 4
+        case 25: board_size = 5
+        case 36: board_size = 6
+        case _: board_size = -1
 
     logging.info(f"Rating: {rating}")
     logging.info(f"Board: {letters}")
+    logging.info(f"Board size: {board_size}")
 
     with open(path, "w") as f:
         f.write(f"{rating} {letters}\n")
@@ -137,11 +146,9 @@ if __name__ == "__main__":
         fetch_board_info(browser, board_info_path)
 
         solution_path = os.path.join(temp_dir, "solution.txt")
-        subprocess.run([
-            "solver.exe",
-            board_info_path,
-            solution_path
-        ], check=True)
+        subprocess.run(
+            ["main.exe", board_info_path, solution_path],
+            check=True)
 
 
         input_solution(browser, solution_path)

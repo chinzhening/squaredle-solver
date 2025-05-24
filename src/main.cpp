@@ -3,14 +3,14 @@
 
 #include <algorithm>
 
-#include "basic_algorithm.cpp"
-//#include "other_algorithm.cpp"
+#include "solver.h"
 
-void read_board_info(const std::string& path, double& rating, std::string& letters) {
+void read_board_info(const std::string& path, double& rating, std::string& letters, int& boardSize) {
     std::ifstream file(path);
     if (!file)
-        throw std::runtime_error("Failed to open board_info.txt");
-    file >> rating >> letters;
+        throw std::runtime_error("Failed to open: " + path);
+    file >> rating >> letters >> boardSize;
+
 }
 
 Trie load_word_trie() {
@@ -39,30 +39,33 @@ Trie load_word_trie() {
 }
 
 int main(int argc, char* argv[]) {
-    if (argc != 3) {
-        std::cerr << "Usage:  <board_info.txt> <solution.txt>" << std::endl;
-        return 1;
-    }
 
     try {
         double rating;
         std::string letters;
+        int boardSize;
 
-        read_board_info(argv[1], rating, letters);
+        read_board_info(argv[1], rating, letters, boardSize);
 
         Trie wordTrie = load_word_trie();
 
-        std::unordered_set<std::string> words = basic_solve_board(wordTrie, letters);
+        std::unordered_set<std::string> words = basic_solve_board(wordTrie, letters, boardSize);
 
         // sort found words
         std::vector<std::string> sorted_words(words.begin(), words.end());
         std::sort(sorted_words.begin(), sorted_words.end());
 
-        std::ofstream out(argv[2]);
-        for (const auto& word : sorted_words) {
-            out << word << std::endl;
+        if (argc == 3){
+            std::ofstream out(argv[2]);
+            for (const auto& word : sorted_words) {
+                out << word << std::endl;
+            }
+        } else if (argc == 2) {
+            for (const auto& word : sorted_words) {
+                std::cout << word << std::endl;
+            }
         }
-
+        
         return 0;
     
     } catch (const std::exception& ex) {
