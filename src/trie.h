@@ -1,5 +1,5 @@
 #pragma once
-#include <unordered_map>
+#include <array>
 #include <string>
 
 /**
@@ -11,13 +11,19 @@
 class TrieNode {
 public:
     bool isEnd = false; /**< True if this node marks the end of a word. */
-    std::unordered_map<char, TrieNode*> children; /**< Children nodes mapped by character. */
+    std::array<TrieNode*, 26> children; /**< Children nodes mapped by character. */
 
     /**
      * @brief Constructs a TrieNode and reserves space for 26 children.
      */
     TrieNode() {
-        children.reserve(26);
+        children.fill(nullptr);
+    }
+
+    ~TrieNode() {
+        for (TrieNode* child : children) {
+            delete child;
+        }
     }
 };
 

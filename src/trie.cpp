@@ -5,7 +5,7 @@ Trie::Trie() {
 }
 
 Trie::~Trie() {
-    clear(root);
+    delete root;
 }
 
 TrieNode* Trie::getRoot() const {
@@ -13,37 +13,39 @@ TrieNode* Trie::getRoot() const {
 }
 
 void Trie::insert(const std::string& word) {
-    TrieNode* node = root;
-    for (char c : word) {
-        if (!node->children.count(c)) {
-            node->children[c] = new TrieNode();
+    TrieNode* current = root;
+    for (char ch : word) {
+        if (ch < 'A' || ch > 'Z') continue; // skip invalid chars if any
+
+        int idx = ch - 'A';
+        if (!current->children[idx]) {
+            current->children[idx] = new TrieNode();
         }
-        node = node->children[c];
+        current = current->children[idx];
     }
-    node->isEnd = true;
+    current->isEnd = true;
 }
 
 bool Trie::search(const std::string& word) const {
-    TrieNode* node = root;
-    for (char c : word) {
-        if (!node->children.count(c)) return false;
-        node = node->children.at(c);
+    TrieNode* current = root;
+    for (char ch : word) {
+        if (ch < 'A' || ch > 'Z') return false;
+
+        int idx = ch - 'A';
+        if (!current->children[idx]) return false;
+        current = current->children[idx];
     }
-    return node->isEnd;
+    return current->isEnd;
 }
 
 bool Trie::startsWith(const std::string& prefix) const {
-    TrieNode* node = root;
-    for (char c : prefix) {
-        if (!node->children.count(c)) return false;
-        node = node->children.at(c);
+    TrieNode* current = root;
+    for (char ch : prefix) {
+        if (ch < 'A' || ch > 'Z') return false;
+
+        int idx = ch - 'A';
+        if (!current->children[idx]) return false;
+        current = current->children[idx];
     }
     return true;
-}
-
-void Trie::clear(TrieNode* node) {
-    for (auto& [_, child] : node->children) {
-        clear(child);
-    }
-    delete node;
 }

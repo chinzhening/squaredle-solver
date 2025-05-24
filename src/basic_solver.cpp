@@ -43,14 +43,15 @@ std::unordered_set<std::string> basic_solve_board(Trie& trie, const std::string&
 
             // No valid word extension from current node
             char c = board[x][y];
-            if (!node->children.count(c)) {
-                return;  
+            int idx = c - 'A';
+            if (idx < 0 || idx >= 26 || node->children[idx] == nullptr) {
+                return;
             }
 
             visited[x * N + y] = true;
 
             buffer[path_len++] = c;
-            node = node->children[c];
+            node = node->children[idx];
 
             // Add valid word to result
             if (node->isEnd && path_len >= 4) {
