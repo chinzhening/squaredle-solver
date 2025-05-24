@@ -1,3 +1,5 @@
+#include <bitset>
+
 #include "solver.h"
 
 std::unordered_set<std::string> basic_solve_board(Trie& trie, const std::string& letters, int size, Benchmark* bm) {
@@ -30,8 +32,8 @@ std::unordered_set<std::string> basic_solve_board(Trie& trie, const std::string&
         }
     }
 
-    std::function<void(int, int, TrieNode*, std::vector<bool>&)> dfs = 
-        [&] (int x, int y, TrieNode* node, std::vector<bool>& visited) {
+    std::function<void(int, int, TrieNode*, std::bitset<36>&)> dfs = 
+        [&] (int x, int y, TrieNode* node, std::bitset<36>& visited) {
             if (bm) bm->increment_recursion();
             
             // Visited in path
@@ -65,7 +67,7 @@ std::unordered_set<std::string> basic_solve_board(Trie& trie, const std::string&
             if (bm) bm->increment_backtrack();
         };
 
-    std::vector<bool> visited(N*N, false);
+    std::bitset<36> visited;
 
     //  Run backtracking
     for (int i = 0; i < N; ++i) {
