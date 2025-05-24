@@ -11,18 +11,29 @@ std::unordered_set<std::string> basic_solve_board(Trie& trie, const std::string&
         board[i / N][i % N] = letters[i];
     }
 
-    std::function<void(int, int, TrieNode*, std::unordered_set<int>&)> dfs = 
-        [&] (int x, int y, TrieNode* node, std::unordered_set<int>& visited) {
+    // Precompute neighbors
+    std::vector<std::vector<std::pair<int, int>>> neighbor_list(N * N);
+    for (int x = 0; x < N; ++x) {
+        for (int y = 0; y < N; ++y) {
+            int idx = x * N + y;
+            for (int dx = -1; dx <= 1; ++dx) {
+                for (int dy = -1; dy <= 1; ++dy) {
+                    if (dx == 0 && dy == 0) continue;
+                    int nx = x + dx, ny = y + dy;
+                    if (nx >= 0 && nx < N && ny >= 0 && ny < N) {
+                        neighbor_list[idx].emplace_back(nx, ny);
+                    }
+                }
+            }
+        }
+    }
+
+    std::function<void(int, int, TrieNode*, std::vector<bool>&)> dfs = 
+        [&] (int x, int y, TrieNode* node, std::vector<bool>& visited) {
             if (bm) bm->increment_recursion();
-            // Out of bounds
-            if (x < 0 || y < 0) {
-                return;
-            }
-            if (x >= N || y >= N) {
-                return;
-            }
+            
             // Visited in path
-            if (visited.find(x * N + y) != visited.end()) {
+            if (visited[x * N + y]) {
                 return;  
             }
 
@@ -32,7 +43,7 @@ std::unordered_set<std::string> basic_solve_board(Trie& trie, const std::string&
                 return;  
             }
 
-            visited.insert(x * N + y);
+            visited[x * N + y] = true;
 
             path.push_back(c);
             node = node->children[c];
@@ -43,20 +54,16 @@ std::unordered_set<std::string> basic_solve_board(Trie& trie, const std::string&
             }
 
             // Search neighbors
-            for (int dx = -1; dx <= 1; ++dx) {
-                for (int dy = -1; dy <= 1; ++dy) {
-                    if (dx || dy) {
-                        dfs(x + dx, y + dy, node, visited);
-                    }
-                }
+            for (const auto& [nx, ny] : neighbor_list[x * N + y]) {
+                dfs(nx, ny, node, visited);
             }
 
             path.pop_back();
-            visited.erase(x * N + y);
+            visited[x * N + y] = false;
             if (bm) bm->increment_backtrack();
         };
 
-    std::unordered_set<int> visited;
+    std::vector<bool> visited(N*N, false);
 
     //  Run backtracking
     for (int i = 0; i < N; ++i) {
