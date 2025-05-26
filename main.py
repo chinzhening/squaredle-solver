@@ -148,7 +148,7 @@ if __name__ == "__main__":
 
         solution_path = os.path.join(temp_dir, "solution.txt")
         subprocess.run(
-            ["main.exe", board_info_path, solution_path],
+            ["build/main.exe", board_info_path, solution_path],
             check=True)
 
 
