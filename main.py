@@ -14,12 +14,16 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 
+# TODO: make this toggleable from a command line argument.
 logging.basicConfig(
     level=logging.INFO
 )
 
 # constants
 URL = "https://www.squaredle.app/"
+URL_XP = "htps://www.squaredle.app/?level=xp"
+
+SOLVER_PATH = "build/main.exe"
 
 
 def get_browser() -> webdriver.Chrome:
@@ -29,6 +33,7 @@ def get_browser() -> webdriver.Chrome:
     browser = webdriver.Chrome(service=service, options=chrome_options)
     return browser
 
+
 def parse_star(star : Tag) -> float:
     if "halfStar" in star.get("class", []):
         return 0.5
@@ -36,6 +41,7 @@ def parse_star(star : Tag) -> float:
         return 0
     else:
         return 1
+
 
 def fetch_board_info(browser : webdriver.Chrome, path : str) -> None:
     try:
@@ -63,6 +69,7 @@ def fetch_board_info(browser : webdriver.Chrome, path : str) -> None:
     logging.info("Parsing source page...")
     soup = BeautifulSoup(browser.page_source, "html.parser")
 
+    # TODO: wrap in try-except block
     rating = sum(parse_star(star) for star in soup.find("div", class_="p difficultyNote").find_all("svg"))
     letters = "".join(t.find(class_="unnecessaryWrapper").contents[0] for t in soup.find("div", class_="board").find_all("div", class_="letter"))
     letters = letters.replace(" ", "_")
@@ -81,6 +88,7 @@ def fetch_board_info(browser : webdriver.Chrome, path : str) -> None:
 
     with open(path, "w") as f:
         f.write(f"{rating} {letters} {board_size}\n")
+
 
 def input_solution(browser : webdriver.Chrome, solution_path : str) -> None:
     
@@ -121,18 +129,26 @@ def input_solution(browser : webdriver.Chrome, solution_path : str) -> None:
                 pass
 
         except Exception as e:
-            logging.info(f"Inputting Error: {e}")
+            logging.info(f"Inputting Solution (error): {e}")
         
         logging.info(f"Words found... {len(words)}")
 
-def fetch_results(browser : webdriver.Chrome) -> str:
-    actions = ActionChains(browser)
-    
-    share = browser.find_element(By.CLASS_NAME, "sh4reBtn")
-    actions.move_to_element(share).click(share).perform()
 
-    result = browser.find_element(By.ID, "shareContent").get_attribute("textContent")
-    logging.info(f"\n{result}")
+def fetch_results(browser : webdriver.Chrome) -> str:
+    try:
+        actions = ActionChains(browser)
+        
+        share = browser.find_element(By.CLASS_NAME, "sh4reBtn")
+        actions.move_to_element(share).click(share).perform()
+
+        result = browser.find_element(By.ID, "shareContent").get_attribute("textContent")
+        logging.info("Fetching Results (success)")
+    except Exception as e:
+        logging.info(f"Fetching Results (error): {e}")
+
+    return result
+
+
 
 if __name__ == "__main__":
     # Selenium setup
@@ -148,13 +164,15 @@ if __name__ == "__main__":
 
         solution_path = os.path.join(temp_dir, "solution.txt")
         subprocess.run(
-            ["build/main.exe", board_info_path, solution_path],
+            [SOLVER_PATH, board_info_path, solution_path],
             check=True)
 
 
         input_solution(browser, solution_path)
         
-        fetch_results(browser)
+        results = fetch_results(browser)
+
+        print(f"Results:\n{results}\n")
 
     finally:
         shutil.rmtree(temp_dir)
