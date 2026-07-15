@@ -47,7 +47,7 @@ def parse_star(star: Tag) -> float:
     else:
         if "fill: none" in style:
             return 0
-    
+
     return 1
 
 
@@ -93,8 +93,8 @@ def fetch_board_info(browser: webdriver.Chrome, path: str) -> None:
         unnecessary_wrapper = t.find(class_="unnecessaryWrapper")
         if unnecessary_wrapper and unnecessary_wrapper.contents:
             letter = unnecessary_wrapper.contents[0].text
-            if letter == ' ':
-                letter = '_'
+            if letter == " ":
+                letter = "_"
             letters.append(letter)
 
     board_size = None
@@ -121,7 +121,6 @@ def fetch_board_info(browser: webdriver.Chrome, path: str) -> None:
 
 
 def input_solution(browser: webdriver.Chrome, solution_path: str) -> None:
-
     logging.info("Inputting found words...")
 
     with open(solution_path) as f:
@@ -176,7 +175,10 @@ def fetch_results(browser: webdriver.Chrome) -> str:
 
         el = browser.find_element(By.ID, "shareContent")
         result = el.get_attribute("textContent")
+
         logging.info("Fetching Results (success)")
+
+        return str(result)
     except Exception as e:
         logging.info(f"Fetching Results (error): {e}")
 
