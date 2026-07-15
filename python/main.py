@@ -5,6 +5,8 @@ import subprocess
 import tempfile
 import time
 
+from pathlib import Path
+
 from bs4 import BeautifulSoup
 from bs4.element import Tag
 
@@ -23,7 +25,8 @@ logging.basicConfig(
 URL = "https://www.squaredle.app/"
 URL_XP = "htps://www.squaredle.app/?level=xp"
 
-SOLVER_PATH = "build/main.exe"
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+SOLVER_PATH = PROJECT_ROOT / "cpp" / "build" / "main.exe"
 
 
 def get_browser() -> webdriver.Chrome:
@@ -164,7 +167,7 @@ if __name__ == "__main__":
 
         solution_path = os.path.join(temp_dir, "solution.txt")
         subprocess.run(
-            [SOLVER_PATH, board_info_path, solution_path],
+            [str(SOLVER_PATH), board_info_path, solution_path],
             check=True)
 
 
