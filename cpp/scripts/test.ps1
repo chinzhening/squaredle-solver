@@ -1,15 +1,14 @@
-# Remove the build directory if it exists
-if (Test-Path -Path "./build") {
-    Remove-Item -Recurse -Force -Path "./build"
-}
+# Resolve paths
+$CppRoot = Resolve-Path "$PSScriptRoot\.."
+$BuildDir = "$CppRoot\build"
 
-# Configure the project with CMake using MinGW and enable benchmarking
-cmake -S . -B build -G "MinGW Makefiles" -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DENABLE_BENCHMARKING=ON
+$RepoRoot = Resolve-Path "$CppRoot\.."
+$TestDir = "$RepoRoot\tests\cpp"
 
-# Build the project
-cmake --build build
+$Binary = "$BuildDir\main.exe"
 
-# Run tests
+Set-Location $CppRoot
+
 function Normalize-Output($text) {
     # Normalize line endings to Unix style
     $text = $text -replace "`r`n", "`n"
@@ -43,10 +42,25 @@ function Show-Diff($expected, $actual) {
 $total = 5
 
 for ($i = 1; $i -le $total; $i++) {
-    $inFile = "tests/$i.in"
-    if (Test-Path $inFile) {
-        $output = & .\build\main.exe $inFile
-        $actualOutput = $output -join "`n"
-        Write-Host "$actualOutput `n"
+    $inFile = "$TestDir/$i.in"
+    $outFile = "$TestDir/$i.out"
+
+    if ((Test-Path $inFile) -and (Test-Path $outFile)) {
+        $actualOutputLines = & $Binary $inFile
+        $actualOutput = $actualOutputLines -join "`n"
+
+        $expectedOutput = Get-Content $outFile -Raw
+
+        $normActual = Normalize-Output $actualOutput
+        $normExpected = Normalize-Output $expectedOutput
+
+        if ($normActual -eq $normExpected) {
+            Write-Host "Test case ${i}/${total}: passed!" -ForegroundColor Green
+        } else {
+            Write-Host "Test case ${i}/${total}: failed." -ForegroundColor Red
+            Show-Diff $expectedOutput $actualOutput
+        }
+    } else {
+        Write-Host "Test case ${i}/${total}: input or output file missing." -ForegroundColor Yellow
     }
 }
