@@ -23,7 +23,7 @@ logging.basicConfig(
 URL = "https://www.squaredle.app/"
 URL_XP = "htps://www.squaredle.app/?level=xp"
 
-SOLVER_PATH = "build/main.exe"
+SOLVER_PATH = "../cpp/build/main.exe"
 
 
 def get_browser() -> webdriver.Chrome:
