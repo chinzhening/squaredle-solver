@@ -34,12 +34,21 @@ def get_browser() -> webdriver.Chrome:
 
 
 def parse_star(star: Tag) -> float:
-    if "halfStar" in star.get("class", []):
-        return 0.5
-    elif "fill: none" in star.get("style", ""):
-        return 0
+    classes = star.get("class")
+    if classes is None:
+        logging.warning("Star element does not have a 'class' attribute.")
     else:
-        return 1
+        if "half" in classes:
+            return 0.5
+
+    style = star.get("style")
+    if style is None:
+        logging.warning("Star element does not have a 'style' attribute.")
+    else:
+        if "fill: none" in style:
+            return 0
+    
+    return 1
 
 
 def fetch_board_info(browser: webdriver.Chrome, path: str) -> None:
@@ -51,7 +60,7 @@ def fetch_board_info(browser: webdriver.Chrome, path: str) -> None:
             logging.info("Skipping tutorial...")
             browser.find_element(By.CLASS_NAME, "skipTutorial").click()
             browser.find_element(By.ID, "confirmAccept").click()
-            time.sleep()
+            time.sleep(1)
         except Exception:
             logging.info("Closing popup...")
             popups = browser.find_elements(By.CLASS_NAME, "popup")
@@ -75,7 +84,7 @@ def fetch_board_info(browser: webdriver.Chrome, path: str) -> None:
     stars = difficulty_note.find_all("svg")
     rating = sum(parse_star(star) for star in stars)
 
-    letters = []
+    letters: list[str] = []
     board = soup.find("div", class_="board")
     if not board:
         raise ValueError("Board not found in the page source.")
@@ -83,10 +92,10 @@ def fetch_board_info(browser: webdriver.Chrome, path: str) -> None:
     for t in board.find_all("div", class_="letter"):
         unnecessary_wrapper = t.find(class_="unnecessaryWrapper")
         if unnecessary_wrapper and unnecessary_wrapper.contents:
-            letters.append(unnecessary_wrapper.contents[0])
-
-    letters = "".join(letters)
-    letters = letters.replace(" ", "_")
+            letter = unnecessary_wrapper.contents[0].text
+            if letter == ' ':
+                letter = '_'
+            letters.append(letter)
 
     board_size = None
     match len(letters):
@@ -101,12 +110,14 @@ def fetch_board_info(browser: webdriver.Chrome, path: str) -> None:
         case _:
             board_size = -1
 
+    letter_str = "".join(letters)
+
     logging.info(f"Rating: {rating}")
-    logging.info(f"Board: {letters}")
+    logging.info(f"Board: {letter_str}")
     logging.info(f"Boardsize: {board_size}")
 
     with open(path, "w") as f:
-        f.write(f"{rating} {letters} {board_size}\n")
+        f.write(f"{rating} {letter_str} {board_size}\n")
 
 
 def input_solution(browser: webdriver.Chrome, solution_path: str) -> None:
@@ -169,7 +180,7 @@ def fetch_results(browser: webdriver.Chrome) -> str:
     except Exception as e:
         logging.info(f"Fetching Results (error): {e}")
 
-    return result
+    return ""
 
 
 if __name__ == "__main__":
