@@ -3,150 +3,46 @@ import os
 import shutil
 import subprocess
 import tempfile
-import time
 from pathlib import Path
 
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.action_chains import ActionChains
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
-
 from board_parser import parse_board
+from squaredle import URL, SeleniumSquaredleClient
 
 # TODO: make this toggleable from a command line argument.
 logging.basicConfig(level=logging.INFO)
-
-# constants
-URL = "https://www.squaredle.app/"
-URL_XP = "htps://www.squaredle.app/?level=xp"
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 SOLVER_PATH = PROJECT_ROOT / "cpp" / "build" / "main.exe"
 
 
-def get_browser() -> webdriver.Chrome:
-    service = Service()
-    chrome_options = webdriver.ChromeOptions()
-    chrome_options.add_experimental_option("excludeSwitches", ["enable-logging"])
-    browser = webdriver.Chrome(service=service, options=chrome_options)
-    return browser
-
-
-def fetch_board_info(browser: webdriver.Chrome, path: str) -> None:
-    try:
-        logging.info("Fetching HTML...")
-        browser.get(URL)
-        time.sleep(5)
-        try:
-            logging.info("Skipping tutorial...")
-            browser.find_element(By.CLASS_NAME, "skipTutorial").click()
-            browser.find_element(By.ID, "confirmAccept").click()
-            time.sleep(1)
-        except Exception:
-            logging.info("Closing popup...")
-            popups = browser.find_elements(By.CLASS_NAME, "popup")
-            for popup in popups:
-                if popup.is_displayed():
-                    close = popup.find_element(By.CLASS_NAME, "closeBtn")
-                    ActionChains(browser).move_to_element(close).click(close).perform()
-                    time.sleep(0.5)
-
-    except Exception as e:
-        logging.info(f"{type(e).__name__}: {e}")
-        browser.quit()
-
-    logging.info("Parsing source page...")
-
-    info = parse_board(browser.page_source)
-
-    with open(path, "w") as f:
-        f.write(f"{info.rating} {info.letters} {info.board_size}\n")
-
-
-def input_solution(browser: webdriver.Chrome, solution_path: str) -> None:
-    logging.info("Inputting found words...")
-
-    with open(solution_path) as f:
-        words = [line.strip() for line in f]
-
-        try:
-            actions = ActionChains(browser)
-
-            popups = browser.find_elements(By.CLASS_NAME, "popup")
-            for word in words:
-                for _ in range(2):
-                    actions.send_keys(word).perform()
-                    actions.send_keys(Keys.ENTER).perform()
-
-                    for popup in popups:
-                        if popup.is_displayed():
-                            try:
-                                close = popup.find_element(By.CLASS_NAME, "closeBtn")
-                                actions.move_to_element(close).click(close).perform()
-                            except Exception as e:
-                                logging.info(f"Error closing popup: {e}")
-
-                            time.sleep(0.5)
-
-                # Not critical, allow to fail silently
-                try:
-                    perma_close = browser.find_element(By.ID, "explainerPermaClose")
-                    actions.move_to_element(perma_close).click(perma_close).perform()
-                except Exception as e:
-                    logging.info(f"Error closing explainer: {e}")
-
-            try:
-                explainer_close = browser.find_element(By.ID, "explainerClose")
-                actions.move_to_element(explainer_close).click(
-                    explainer_close
-                ).perform()
-            except Exception as e:
-                logging.info(f"Error closing explainer: {e}")
-
-        except Exception as e:
-            logging.info(f"Inputting Solution (error): {e}")
-
-        logging.info(f"Words found... {len(words)}")
-
-
-def fetch_results(browser: webdriver.Chrome) -> str:
-    try:
-        actions = ActionChains(browser)
-
-        share = browser.find_element(By.CLASS_NAME, "sh4reBtn")
-        actions.move_to_element(share).click(share).perform()
-
-        el = browser.find_element(By.ID, "shareContent")
-        result = el.get_attribute("textContent")
-
-        logging.info("Fetching Results (success)")
-
-        return str(result)
-    except Exception as e:
-        logging.info(f"Fetching Results (error): {e}")
-
-    return ""
-
-
 if __name__ == "__main__":
     # Selenium setup
-    browser = get_browser()
-    browser.maximize_window()
-    browser.set_page_load_timeout(20)
+    client = SeleniumSquaredleClient()
 
     temp_dir = tempfile.mkdtemp()
 
     try:
         board_info_path = os.path.join(temp_dir, "board_info.txt")
-        fetch_board_info(browser, board_info_path)
+
+        board_html = client.get_board_html(URL)
+        board_info = parse_board(board_html)
+
+        with open(board_info_path, "w") as f:
+            rating = board_info.rating
+            letters = board_info.letters
+            board_size = board_info.board_size
+            f.write(f"{rating} {letters} {board_size}\n")
 
         solution_path = os.path.join(temp_dir, "solution.txt")
         subprocess.run([str(SOLVER_PATH), board_info_path, solution_path], check=True)
 
-        input_solution(browser, solution_path)
+        with open(solution_path) as f:
+            words = [line.strip() for line in f]
+            logging.info(f"Words found: {len(words)}")
 
-        results = fetch_results(browser)
+        client.input_words(words)
+
+        results = client.get_results()
 
         print(f"Results:\n{results}\n")
 
@@ -155,4 +51,4 @@ if __name__ == "__main__":
         logging.info("Temporary files deleted.")
 
         # Close the browser window
-        browser.quit()
+        client.close()
