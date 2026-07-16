@@ -6,13 +6,13 @@ import tempfile
 import time
 from pathlib import Path
 
-from bs4 import BeautifulSoup
-from bs4.element import Tag
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+
+from board_parser import parse_board
 
 # TODO: make this toggleable from a command line argument.
 logging.basicConfig(level=logging.INFO)
@@ -31,24 +31,6 @@ def get_browser() -> webdriver.Chrome:
     chrome_options.add_experimental_option("excludeSwitches", ["enable-logging"])
     browser = webdriver.Chrome(service=service, options=chrome_options)
     return browser
-
-
-def parse_star(star: Tag) -> float:
-    classes = star.get("class")
-    if classes is None:
-        logging.warning("Star element does not have a 'class' attribute.")
-    else:
-        if "half" in classes:
-            return 0.5
-
-    style = star.get("style")
-    if style is None:
-        logging.warning("Star element does not have a 'style' attribute.")
-    else:
-        if "fill: none" in style:
-            return 0
-
-    return 1
 
 
 def fetch_board_info(browser: webdriver.Chrome, path: str) -> None:
@@ -75,49 +57,11 @@ def fetch_board_info(browser: webdriver.Chrome, path: str) -> None:
         browser.quit()
 
     logging.info("Parsing source page...")
-    soup = BeautifulSoup(browser.page_source, "html.parser")
 
-    # TODO: wrap in try-except block
-    difficulty_note = soup.find("div", class_="p difficultyNote")
-    if not difficulty_note:
-        raise ValueError("Difficulty note not found in the page source.")
-    stars = difficulty_note.find_all("svg")
-    rating = sum(parse_star(star) for star in stars)
-
-    letters: list[str] = []
-    board = soup.find("div", class_="board")
-    if not board:
-        raise ValueError("Board not found in the page source.")
-
-    for t in board.find_all("div", class_="letter"):
-        unnecessary_wrapper = t.find(class_="unnecessaryWrapper")
-        if unnecessary_wrapper and unnecessary_wrapper.contents:
-            letter = unnecessary_wrapper.contents[0].text
-            if letter == " ":
-                letter = "_"
-            letters.append(letter)
-
-    board_size = None
-    match len(letters):
-        case 9:
-            board_size = 3
-        case 16:
-            board_size = 4
-        case 25:
-            board_size = 5
-        case 36:
-            board_size = 6
-        case _:
-            board_size = -1
-
-    letter_str = "".join(letters)
-
-    logging.info(f"Rating: {rating}")
-    logging.info(f"Board: {letter_str}")
-    logging.info(f"Boardsize: {board_size}")
+    info = parse_board(browser.page_source)
 
     with open(path, "w") as f:
-        f.write(f"{rating} {letter_str} {board_size}\n")
+        f.write(f"{info.rating} {info.letters} {info.board_size}\n")
 
 
 def input_solution(browser: webdriver.Chrome, solution_path: str) -> None:
