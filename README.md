@@ -5,11 +5,10 @@ It scrapes the board from the website, preprocesses it, then solves the board us
 
 ## requirements
 
-- Python 3.8+
+- Python 3.13+
 - g++ with C++17 support
-- Selenium
+- Playwright
 - BeautifulSoup4
-- `webdriver-manager`
 - CMake: https://cmake.org/download/
 
 ## installation
@@ -26,6 +25,8 @@ python -m .venv venv
 .\.venv\Scripts\activate
 
 pip install -r requirements.txt
+
+playwright install
 ```
 3. Run the build script to compile the C++ executable. On Windows (Powershell):
 ```powershell
