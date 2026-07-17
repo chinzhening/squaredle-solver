@@ -70,7 +70,6 @@ class PlaywrightSquaredleClient:
         try:
             await self._page.click(".skipTutorial")
             await self._page.click("#confirmAccept")
-            await asyncio.sleep(1)
         except Exception:
             logging.info("Closing popup...")
             popups = await self._page.query_selector_all(".popup")
@@ -79,7 +78,6 @@ class PlaywrightSquaredleClient:
                     close = await popup.query_selector(".closeBtn")
                     if close:
                         await close.click()
-                        await asyncio.sleep(0.5)
 
         await self._page.wait_for_selector(".board")
         return await self._page.content()
@@ -94,7 +92,6 @@ class PlaywrightSquaredleClient:
         for word in words:
             await self._page.type("body", word)
             await self._page.keyboard.press("Enter")
-            await asyncio.sleep(0.5)
 
             for popup in popups:
                 if await popup.is_visible():
