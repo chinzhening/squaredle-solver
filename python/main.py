@@ -16,7 +16,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 SOLVER_PATH = PROJECT_ROOT / "cpp" / "build" / "main.exe"
 
 
-async def main():
+async def main() -> None:
     # Playwright setup
     client: SquaredleClient = PlaywrightSquaredleClient()
     await client.start()
