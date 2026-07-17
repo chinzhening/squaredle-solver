@@ -13,19 +13,14 @@ class BoardInfo:
 
 
 def parse_star(star: Tag) -> float:
-    classes = star.get("class")
-    if classes is None:
-        logging.warning("Star element does not have a 'class' attribute.")
-    else:
-        if "half" in classes:
-            return 0.5
+    classes = star.get_attribute_list("class")
+    styles = star.get_attribute_list("style")
+    logging.debug(f"Star classes: {classes}, styles: {styles}")
 
-    style = star.get("style")
-    if style is None:
-        logging.warning("Star element does not have a 'style' attribute.")
-    else:
-        if "fill: none" in style:
-            return 0
+    if classes and "half" in classes:
+        return 0.5
+    elif styles and "fill: none;" in styles:
+        return 0
 
     return 1
 
