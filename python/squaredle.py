@@ -24,6 +24,10 @@ URL_XP = "https://www.squaredle.app/?level=xp"
 
 
 class SquaredleClient(Protocol):
+    async def start(self) -> None:
+        """Start the client, e.g. launch browser."""
+        ...
+
     async def get_board_html(self, url: str) -> str:
         """Navigate to URL, dismiss onboarding, return page HTML with board."""
         ...
@@ -147,6 +151,9 @@ class PlaywrightSquaredleClient:
 
 class SeleniumSquaredleClient:
     def __init__(self) -> None:
+        self._browser: webdriver.Chrome | None = None
+
+    async def start(self) -> None:
         service = Service()
         chrome_options = webdriver.ChromeOptions()
         chrome_options.add_experimental_option("excludeSwitches", ["enable-logging"])
@@ -157,6 +164,8 @@ class SeleniumSquaredleClient:
         self._browser.set_page_load_timeout(20)
 
     async def get_board_html(self, url: str) -> str:
+        if self._browser is None:
+            raise RuntimeError("Selenium client not started. Call start() first.")
         try:
             logging.info("Fetching HTML...")
             self._browser.get(url)
@@ -185,6 +194,9 @@ class SeleniumSquaredleClient:
         return self._browser.page_source
 
     async def input_words(self, words: list[str]) -> None:
+        if self._browser is None:
+            raise RuntimeError("Selenium client not started. Call start() first.")
+
         logging.info("Inputting found words...")
         try:
             actions = ActionChains(self._browser)
@@ -214,6 +226,9 @@ class SeleniumSquaredleClient:
             logging.info(f"Inputting Solution (error): {e}")
 
     async def _close_explainer(self, actions: ActionChains) -> None:
+        if self._browser is None:
+            raise RuntimeError("Selenium client not started. Call start() first.")
+
         for element_id in ["explainerPermaClose", "explainerClose"]:
             try:
                 close = self._browser.find_element(By.ID, element_id)
@@ -225,6 +240,9 @@ class SeleniumSquaredleClient:
                 continue
 
     async def get_results(self) -> str:
+        if self._browser is None:
+            raise RuntimeError("Selenium client not started. Call start() first.")
+
         try:
             actions = ActionChains(self._browser)
 
@@ -243,4 +261,5 @@ class SeleniumSquaredleClient:
         return ""
 
     async def close(self) -> None:
-        self._browser.quit()
+        if self._browser:
+            self._browser.quit()
