@@ -4,16 +4,10 @@ import os
 import shutil
 import subprocess
 import tempfile
-from pathlib import Path
 
 from board_parser import parse_board
-from squaredle import URL, PlaywrightSquaredleClient, SquaredleClient
-
-# TODO: make this toggleable from a command line argument.
-logging.basicConfig(level=logging.INFO)
-
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-SOLVER_PATH = PROJECT_ROOT / "cpp" / "build" / "main.exe"
+from config import SOLVER_PATH, URL
+from squaredle import PlaywrightSquaredleClient, SquaredleClient
 
 
 async def main() -> None:

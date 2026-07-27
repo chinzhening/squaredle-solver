@@ -9,9 +9,6 @@ from playwright.async_api import (
     async_playwright,
 )
 
-URL = "https://www.squaredle.app/"
-URL_XP = "https://www.squaredle.app/?level=xp"
-
 
 class SquaredleClient(Protocol):
     async def start(self) -> None:
