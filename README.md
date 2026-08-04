@@ -6,64 +6,92 @@ It scrapes the board from the website, preprocesses it, then solves the board us
 ## requirements
 
 - Python 3.13+
-- g++ with C++17 support
-- Playwright
-- BeautifulSoup4
-- CMake: https://cmake.org/download/
+- [uv](https://docs.astral.sh/uv/getting-started/installation/) (manages the virtual environment and Python dependencies)
+- g++ with C++17 support (MinGW on Windows)
+- CMake 3.10+: https://cmake.org/download/
+
+Python dependencies (Playwright, BeautifulSoup4, pydantic-settings, pymongo) are declared in `python/pyproject.toml` and installed by `uv sync`.
 
 ## installation
+
 1. **Clone this repository:**
 
-```powershell
-git clone https://github.com/yourusername/squaredle-solver.git
-cd squaredle-solver
-```
-2. **Install the dependencies:** recommendation is to use a virtual environment
+   ```powershell
+   git clone https://github.com/chinzhening/squaredle-solver.git
+   cd squaredle-solver
+   ```
+
+2. **Install the Python dependencies.** `uv sync` creates `python/.venv` and installs
+   everything from the lockfile, so there is no virtual environment to set up by hand.
+
+   ```powershell
+   cd python
+   uv sync
+   uv run playwright install
+   ```
+
+3. **Configure (optional).** Every setting has a working default, so a fresh clone runs
+   without any configuration. To solve the XP board or write results to MongoDB, copy the
+   example file and edit it:
+
+   ```powershell
+   copy .env.example .env
+   ```
+
+4. **Build the C++ executable.** On Windows (PowerShell):
+
+   ```powershell
+   .\cpp\scripts\build.ps1
+   ```
+
+   This writes `cpp/build/main.exe`, which is where `SOLVER_PATH` points by default.
+
+5. **Run the tests.** Requires step 4 to have been run first. On Windows (PowerShell):
+
+   ```powershell
+   .\cpp\scripts\test.ps1
+   ```
+
+   `benchmark.ps1` rebuilds with `-DENABLE_BENCHMARKING=ON` and runs the timing pass:
+
+   ```powershell
+   .\cpp\scripts\benchmark.ps1
+   ```
+
+## usage
+
+Run the Python script:
+
 ```powershell
 cd python
-python -m .venv venv
-.\.venv\Scripts\activate
-
-pip install -r requirements.txt
-
-playwright install
-```
-3. Run the build script to compile the C++ executable. On Windows (Powershell):
-```powershell
-.\cpp\scripts\build.ps1
-```
-4. Run tests
-
-On Windows (Powershell):
-```powershell
-.\cpp\scripts\test.ps1
-.\cpp\scripts\benchmark.ps1
+uv run main.py
 ```
 
-# usage
-Run the python script
-```powershell
-cd python
-.\.venv\Scripts\activate
-python main.py
-```
+## project structure
 
-# project structure
 ```
 .
 ├── LICENSE
 ├── README.md
 ├── cpp
 │   ├── CMakeLists.txt
+│   ├── benchmark
 │   ├── data
 │   ├── src
 │   └── scripts
+│       ├── build.ps1
 │       ├── test.ps1
-│       ├── benchmark.ps1
-│       └── build.ps1
+│       └── benchmark.ps1
 ├── python
 │   ├── main.py
-│   └── requirements.txt
+│   ├── board_parser.py
+│   ├── config.py
+│   ├── squaredle.py
+│   ├── writers.py
+│   ├── pyproject.toml
+│   ├── uv.lock
+│   └── .env.example
 └── tests
     └── cpp
+        └── xp
 ```
