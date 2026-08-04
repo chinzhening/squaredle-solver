@@ -20,7 +20,7 @@ class SquaredleClient(Protocol):
         ...
 
     async def input_words(self, words: list[str]) -> None:
-        """Type each word + Enter into the board, dismissing any feedback
+        """Type words into the board, dismissing any feedback
         popups and the explainer overlay as they appear."""
         ...
 
