@@ -17,7 +17,7 @@ def parse_star(star: Tag) -> float:
     styles = star.get_attribute_list("style")
     logging.debug(f"Star classes: {classes}, styles: {styles}")
 
-    if classes and "half" in classes:
+    if classes and "halfStar" in classes:
         return 0.5
     elif styles and "fill: none;" in styles:
         return 0
