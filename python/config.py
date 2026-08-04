@@ -26,8 +26,8 @@ class Config(BaseSettings):
     )
 
     # Puzzle source
-    URL_NORMAL: str = "https://www.squaredle.app/"
-    URL_XP: str = "https://www.squaredle.app/?level=xp"
+    URL_NORMAL: str = "https://squaredle.app/"
+    URL_XP: str = "https://squaredle.app/?level=xp"
     USE_XP: bool = False
 
     # Solver binary built from cpp/

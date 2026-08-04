@@ -6,6 +6,7 @@ from playwright.async_api import (
     BrowserContext,
     Page,
     Playwright,
+    TimeoutError,
     async_playwright,
 )
 
@@ -95,6 +96,8 @@ class PlaywrightSquaredleClient:
 
         await self._close_explainer()
 
+        logging.info("All words inputted.")
+
     async def _close_explainer(self) -> None:
         if self._page is None:
             raise RuntimeError("Playwright client not started. Call start() first.")
@@ -115,11 +118,33 @@ class PlaywrightSquaredleClient:
 
         try:
             await self._page.click(".sh4reBtn")
-            result_element = await self._page.query_selector("#shareContent")
-            if result_element:
-                result = await result_element.text_content()
-                logging.info("Fetching Results (success)")
-                return result or ""
+
+            share = self._page.locator("#shareContent")
+            initial = await share.inner_text()
+
+            await self._page.wait_for_function(
+                """
+                ({ initial }) => {
+                    const el = document.querySelector("#shareContent");
+                    return el && el.innerText !== initial;
+                }
+                """,
+                arg={"initial": initial},
+                timeout=10000,
+            )
+
+            result = await share.inner_text()
+
+            logging.info("Fetching Results (success)")
+            return result.strip()
+
+        except TimeoutError as e:
+            logging.warning(f"Fetching Results (timeout): {e}")
+
+            share = self._page.locator("#shareContent")
+            result = await share.inner_text()
+            return result.strip()
+
         except Exception as e:
             logging.info(f"Fetching Results (error): {e}")
 
