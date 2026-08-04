@@ -2,7 +2,7 @@
 #define UTILS_H
 
 #include <string>
-#include "Trie.h"  // Include if Trie is defined in a separate header
+#include "trie.h"  // Include if Trie is defined in a separate header
 
 /**
  * @brief Loads a Trie with words from predefined word list files.

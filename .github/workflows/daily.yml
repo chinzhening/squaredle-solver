@@ -15,18 +15,25 @@ permissions:
 jobs:
   squaredle:
     runs-on: ubuntu-latest
+    # Supplies MONGO_URI
+    environment: daily-run
     timeout-minutes: 20
     steps:
       - name: Checkout repo
         uses: actions/checkout@v7
 
-      # Build the C++ solver. cpp/build/ is gitignored, so the binary and its
-      # word lists have to be produced fresh on every run.
-      - name: Install C++ build dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y cmake g++
+      # Build the C++ solver. cpp/build/ is gitignored, so the binary and the
+      # word lists copied beside it only survive between runs via this cache.
+      # The key covers cpp/data/ too, since CMake copies it into the build dir.
+      # ubuntu-latest already ships cmake and g++, so nothing needs installing.
+      - name: Cache C++ build
+        id: cache-cpp
+        uses: actions/cache@v6
+        with:
+          path: cpp/build
+          key: cpp-${{ runner.os }}-${{ hashFiles('cpp/CMakeLists.txt', 'cpp/src/**', 'cpp/benchmark/**', 'cpp/data/**') }}
       - name: Build C++ executable
+        if: steps.cache-cpp.outputs.cache-hit != 'true'
         working-directory: cpp
         run: |
           cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
@@ -44,6 +51,16 @@ jobs:
         working-directory: python
         run: |
           uv sync --no-dev
+
+      # The chromium bundle is the largest download in the run. Only the
+      # browser caches; --with-deps installs system libraries apt-side, which
+      # no cache can restore, so the install step still runs on a hit and
+      # simply skips the download.
+      - name: Cache playwright browsers
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('python/uv.lock') }}
       - name: Install playwright browsers
         working-directory: python
         run: |
