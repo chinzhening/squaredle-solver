@@ -1,0 +1,2 @@
+# Committed benchmark JSON runs live here.
+# Capture with: bench.exe --benchmark_format=json > baseline-<date>.json
