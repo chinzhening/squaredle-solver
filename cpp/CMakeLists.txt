@@ -12,6 +12,34 @@ if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
 endif()
 
+# Off by default: keeps the shipped build and CI dependency-free.
+option(BUILD_BENCHMARKS "Build the Google Benchmark micro-benchmark target" OFF)
+
+if (BUILD_BENCHMARKS)
+    # Must precede include(FetchContent), which seeds this cache entry itself.
+    # Lives outside the build tree because build.ps1 wipes it every run.
+    set(FETCHCONTENT_BASE_DIR "${PROJECT_SOURCE_DIR}/.deps"
+        CACHE PATH "Where FetchContent stores downloaded dependencies")
+
+    include(FetchContent)
+
+    # Library only; testing would drag in GoogleTest.
+    set(BENCHMARK_ENABLE_TESTING     OFF CACHE BOOL "" FORCE)
+    set(BENCHMARK_ENABLE_GTEST_TESTS OFF CACHE BOOL "" FORCE)
+    set(BENCHMARK_ENABLE_INSTALL     OFF CACHE BOOL "" FORCE)
+    set(BENCHMARK_INSTALL_DOCS       OFF CACHE BOOL "" FORCE)
+    # GCC 16 outpaces this release; don't fail on upstream warnings.
+    set(BENCHMARK_ENABLE_WERROR      OFF CACHE BOOL "" FORCE)
+
+    FetchContent_Declare(
+        googlebenchmark
+        GIT_REPOSITORY https://github.com/google/benchmark.git
+        GIT_TAG        v1.9.5
+        GIT_SHALLOW    TRUE
+    )
+    FetchContent_MakeAvailable(googlebenchmark)
+endif()
+
 include_directories(
     ${PROJECT_SOURCE_DIR}/src
     ${PROJECT_SOURCE_DIR}/benchmark
