@@ -1,4 +1,5 @@
-cmake_minimum_required(VERSION 3.10)
+# 3.16 for FetchContent_MakeAvailable (3.14+), with margin to spare.
+cmake_minimum_required(VERSION 3.16)
 project(SquaredleSolver)
 
 set(CMAKE_CXX_STANDARD 17)
