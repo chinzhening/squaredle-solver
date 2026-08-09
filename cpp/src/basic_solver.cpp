@@ -1,12 +1,26 @@
 #include "solver.h"
 
-std::unordered_set<std::string> basic_solve_board(Trie& trie, const std::string& letters, int size, Benchmark* bm) {
+#include <functional>
+#include <utility>
+
+namespace {
+
+/**
+ * @brief Shared DFS body for both public overloads.
+ *
+ * @tparam Collect When false, every counter update is discarded at compile
+ *         time by `if constexpr`, leaving the inner loop free of the `if (bm)`
+ *         branch and two increments the old Benchmark hook compiled in.
+ */
+template <bool Collect>
+std::unordered_set<std::string> solve_impl(Trie& trie, const std::string& letters, int size,
+                                           SolveStats* stats) {
     std::unordered_set<std::string> found;
-    
+
     char buffer[20];
     int path_len = 0;
 
-    const int N = size;  
+    const int N = size;
     std::vector<std::vector<char>> board(N, std::vector<char>(N));
 
     for (int i = 0; i < N * N; ++i) {
@@ -30,13 +44,13 @@ std::unordered_set<std::string> basic_solve_board(Trie& trie, const std::string&
         }
     }
 
-    std::function<void(int, int, TrieNode*, std::bitset<36>&)> dfs = 
+    std::function<void(int, int, TrieNode*, std::bitset<36>&)> dfs =
         [&] (int x, int y, TrieNode* node, std::bitset<36>& visited) {
-            if (bm) bm->increment_recursion();
-            
+            if constexpr (Collect) ++stats->recursions;
+
             // Visited in path
             if (visited[x * N + y]) {
-                return;  
+                return;
             }
 
             // No valid word extension from current node
@@ -63,7 +77,7 @@ std::unordered_set<std::string> basic_solve_board(Trie& trie, const std::string&
 
             --path_len;
             visited[x * N + y] = false;
-            if (bm) bm->increment_backtrack();
+            if constexpr (Collect) ++stats->backtracks;
         };
 
     std::bitset<36> visited;
@@ -76,4 +90,15 @@ std::unordered_set<std::string> basic_solve_board(Trie& trie, const std::string&
     }
 
     return found;
+}
+
+}  // namespace
+
+std::unordered_set<std::string> basic_solve_board(Trie& trie, const std::string& letters, int size) {
+    return solve_impl<false>(trie, letters, size, nullptr);
+}
+
+std::unordered_set<std::string> basic_solve_board(Trie& trie, const std::string& letters, int size,
+                                                  SolveStats& stats) {
+    return solve_impl<true>(trie, letters, size, &stats);
 }

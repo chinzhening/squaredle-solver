@@ -10,11 +10,19 @@
 #include <algorithm>
 #include <fstream>
 #include <iostream>
+#include <string>
+#include <vector>
 
 #include "solver.h"
 #include "utils.h"
 
-#include "benchmark.h"
+namespace {
+
+void print_usage(const char* prog) {
+    std::cerr << "Usage: " << prog << " <board.in> [solution.out] [--stats]\n";
+}
+
+}  // namespace
 
 int main(int argc, char* argv[]) {
     /**
@@ -24,67 +32,69 @@ int main(int argc, char* argv[]) {
      * @param argv Array of command-line arguments.
      *             argv[1]: input file path (required)
      *             argv[2]: output file path (optional)
+     *             --stats: report DFS counters on stderr (diagnostic only;
+     *                      never time a run with this on -- see cpp/bench)
      *
      * @return 0 on success, 1 on error.
      */
 
     try {
+        bool want_stats = false;
+        std::vector<const char*> positional;
+
+        for (int i = 1; i < argc; ++i) {
+            std::string arg = argv[i];
+            if (arg == "--stats") {
+                want_stats = true;
+            } else {
+                positional.push_back(argv[i]);
+            }
+        }
+
+        if (positional.empty()) {
+            print_usage(argv[0]);
+            return 1;
+        }
+
         double rating;
         std::string letters;
         int boardSize;
 
-        read_board_info(argv[1], rating, letters, boardSize);
+        read_board_info(positional[0], rating, letters, boardSize);
 
         Trie wordTrie = load_word_trie();
 
         std::unordered_set<std::string> words;
-        #ifdef ENABLE_BENCHMARKING
-            int iterations = 1000;
+        if (want_stats) {
+            SolveStats stats;
+            words = basic_solve_board(wordTrie, letters, boardSize, stats);
+            // stderr so stdout stays a clean word list
+            std::cerr << "Board: " << letters << " " << boardSize << "\n"
+                      << "Recursions: " << stats.recursions << "\n"
+                      << "Backtracks: " << stats.backtracks << "\n";
+        } else {
+            words = basic_solve_board(wordTrie, letters, boardSize);
+        }
 
-            size_t total_time_ns = 0;
-            size_t total_recursions = 0;
-            size_t total_backtracks = 0;
-            for (int i = 0; i < iterations; i++) {
-                Benchmark bm;
-                bm.reset_counters();
-                bm.start();
-                words = basic_solve_board(wordTrie, letters, boardSize, &bm);
-                bm.stop();
-                
-                total_time_ns += bm.get_duration_ns();
-                total_recursions += bm.get_recursion_count();
-                total_backtracks += bm.get_backtrack_count();
+        // Sort found words for IO
+        std::vector<std::string> sorted_words(words.begin(), words.end());
+        std::sort(sorted_words.begin(), sorted_words.end());
+
+        if (positional.size() >= 2) {
+            std::ofstream out(positional[1]);
+            for (const auto& word : sorted_words) {
+                out << word << std::endl;
             }
-            std::cout << "Test " << letters << " " << boardSize << std::endl;
-            std::cout << "Average over " << iterations << " runs:\n";
-            std::cout << "Time: " << (total_time_ns / iterations) << " ns\n";
-            std::cout << "Recursions: " << (total_recursions / iterations) << "\n";
-            std::cout << "Backtracks: " << (total_backtracks / iterations) << "\n";
-        #else
-            words = basic_solve_board(wordTrie, letters, boardSize, nullptr);
-
-            // Sort found words for IO
-            std::vector<std::string> sorted_words(words.begin(), words.end());
-            std::sort(sorted_words.begin(), sorted_words.end());
-
-            
-            if (argc == 3){
-                std::ofstream out(argv[2]);
-                for (const auto& word : sorted_words) {
-                    out << word << std::endl;
-                }
-            } else if (argc == 2) {
-                for (const auto& word : sorted_words) {
-                    std::cout << word << std::endl;
-                }
+        } else {
+            for (const auto& word : sorted_words) {
+                std::cout << word << std::endl;
             }
-            
-            return 0;
-        #endif
-    
+        }
+
+        return 0;
+
     } catch (const std::exception& ex) {
         std::cerr << "Error: " << ex.what() << '\n';
         return 1;
     }
-
 }

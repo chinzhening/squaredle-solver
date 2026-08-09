@@ -40,30 +40,23 @@ if (BUILD_BENCHMARKS)
     FetchContent_MakeAvailable(googlebenchmark)
 endif()
 
-include_directories(
-    ${PROJECT_SOURCE_DIR}/src
-    ${PROJECT_SOURCE_DIR}/benchmark
-)
-
-set(SOURCES
-    src/main.cpp
+# Solver sources live in one library so `main` and `bench` provably share
+# them: there is no build-type or define that applies to only one of the two.
+add_library(solver_core STATIC
     src/basic_solver.cpp
     src/utils.cpp
     src/trie.cpp
-    benchmark/benchmark.cpp
 )
 
-add_executable(main ${SOURCES})
+target_include_directories(solver_core PUBLIC ${PROJECT_SOURCE_DIR}/src)
 
-# Define the runtime data path
-target_compile_definitions(main PRIVATE
+# Absolute, so both executables resolve it regardless of working directory.
+target_compile_definitions(solver_core PUBLIC
     DATA_DIR="${CMAKE_BINARY_DIR}/data"
 )
 
-if(ENABLE_BENCHMARKING)
-    target_compile_definitions(main PRIVATE ENABLE_BENCHMARKING)
-endif()
-
+add_executable(main src/main.cpp)
+target_link_libraries(main PRIVATE solver_core)
 
 set_target_properties(main PROPERTIES
     OUTPUT_NAME "main"
