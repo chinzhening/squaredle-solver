@@ -1,20 +1,23 @@
+# Builds and runs the Google Benchmark suite.
+#
+# Unlike build.ps1 this does NOT wipe the build directory: a benchmark run
+# should not be preceded by a full rebuild of the dependency it just measured.
+
+param(
+    # Extra flags forwarded to the bench binary, e.g.
+    #   .\benchmark.ps1 --benchmark_filter=BM_SolveBoard
+    [Parameter(ValueFromRemainingArguments = $true)]
+    [string[]]$BenchArgs
+)
+
+$ErrorActionPreference = "Stop"
+
 # Resolve paths
 $CppRoot = Resolve-Path "$PSScriptRoot\.."
 $BuildDir = "$CppRoot\build"
+$Binary = "$BuildDir\bench.exe"
 
-$RepoRoot = Resolve-Path "$CppRoot\.."
-$TestDir = "$RepoRoot\tests\cpp"
-
-$Binary = "$BuildDir\main.exe"
-
-Set-Location $CppRoot
-
-# Remove the build directory if it exists
-if (Test-Path $BuildDir) {
-    Remove-Item -Recurse -Force $BuildDir
-}
-
-# Configure the project with CMake using MinGW and enable benchmarking
+# Configure with the benchmark target enabled
 cmake `
     -S $CppRoot `
     -B $BuildDir `
@@ -22,24 +25,13 @@ cmake `
     -DCMAKE_C_COMPILER=gcc `
     -DCMAKE_CXX_COMPILER=g++ `
     -DCMAKE_BUILD_TYPE=Release `
-    -DENABLE_BENCHMARKING=ON
+    -DBUILD_BENCHMARKS=ON
 
 # Build the project
 cmake --build $BuildDir
 
-$total = 5
-
-for ($i = 1; $i -le $total; $i++) {
-    $inFile = "$TestDir\$i.in"
-
-    if (!(Test-Path $inFile)) {
-        Write-Host "Skipping missing test: $inFile"
-        continue
-    }
-
-    Write-Host ""
-    Write-Host "Running test $i..."
-
-    # Pass input file as argument
-    & $Binary $inFile
+if (-not (Test-Path $Binary)) {
+    throw "Benchmark binary not found at $Binary"
 }
+
+& $Binary @BenchArgs

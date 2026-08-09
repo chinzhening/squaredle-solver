@@ -69,3 +69,15 @@ add_custom_command(TARGET main POST_BUILD
         ${PROJECT_SOURCE_DIR}/data
         $<TARGET_FILE_DIR:main>/data
 )
+
+if (BUILD_BENCHMARKS)
+    add_executable(bench bench/bench_main.cpp)
+    target_link_libraries(bench PRIVATE solver_core benchmark::benchmark)
+
+    set_target_properties(bench PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+    )
+
+    # `bench` reads the same DATA_DIR, which main's POST_BUILD populates.
+    add_dependencies(bench main)
+endif()
