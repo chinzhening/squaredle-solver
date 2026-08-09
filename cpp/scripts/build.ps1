@@ -17,7 +17,8 @@ cmake `
     -B $BuildDir `
     -G "MinGW Makefiles" `
     -DCMAKE_C_COMPILER=gcc `
-    -DCMAKE_CXX_COMPILER=g++
+    -DCMAKE_CXX_COMPILER=g++ `
+    -DCMAKE_BUILD_TYPE=Release
 
 # Build the project
 cmake --build $BuildDir
