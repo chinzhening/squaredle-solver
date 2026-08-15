@@ -63,17 +63,18 @@ int main(int argc, char* argv[]) {
         read_board_info(positional[0], rating, letters, boardSize);
 
         Trie wordTrie = load_word_trie();
+        TrieAutomaton automaton{wordTrie};
 
         std::unordered_set<std::string> words;
         if (want_stats) {
             SolveStats stats;
-            words = basic_solve_board(wordTrie, letters, boardSize, stats);
+            words = basic_solve_board(automaton, letters, boardSize, stats);
             // stderr so stdout stays a clean word list
             std::cerr << "Board: " << letters << " " << boardSize << "\n"
                       << "Recursions: " << stats.recursions << "\n"
                       << "Backtracks: " << stats.backtracks << "\n";
         } else {
-            words = basic_solve_board(wordTrie, letters, boardSize);
+            words = basic_solve_board(automaton, letters, boardSize);
         }
 
         // Sort found words for IO

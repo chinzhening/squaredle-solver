@@ -8,7 +8,7 @@ Trie::~Trie() {
     delete root;
 }
 
-TrieNode* Trie::getRoot() const {
+const TrieNode* Trie::getRoot() const {
     return root;
 }
 
@@ -48,4 +48,23 @@ bool Trie::startsWith(const std::string& prefix) const {
         current = current->children[idx];
     }
     return true;
+}
+
+TrieAutomaton::State TrieAutomaton::root() const {
+    return trie.getRoot();
+}
+
+TrieAutomaton::State TrieAutomaton::transition(TrieAutomaton::State s, char c) const {
+    if (!s || c < 'A' || c > 'Z') return nullptr;
+
+    const auto index = static_cast<std::size_t>(c - 'A');
+    return s->children[index];
+}
+
+bool TrieAutomaton::valid(TrieAutomaton::State s) const {
+    return s != nullptr;
+}
+
+bool TrieAutomaton::terminal(TrieAutomaton::State s) const {
+    return s && s->isEnd;
 }

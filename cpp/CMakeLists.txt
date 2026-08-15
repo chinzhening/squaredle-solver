@@ -40,7 +40,6 @@ endif()
 # Solver sources live in one library so `main` and `bench` provably share
 # them: there is no build-type or define that applies to only one of the two.
 add_library(solver_core STATIC
-    src/basic_solver.cpp
     src/utils.cpp
     src/trie.cpp
 )

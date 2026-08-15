@@ -65,13 +65,14 @@ BENCHMARK(BM_InsertWordsIntoTrie)->Unit(benchmark::kMillisecond);
 /** Search only, against a trie built once outside the timed region. */
 void BM_SolveBoard(benchmark::State& state, Board board) {
     Trie trie = load_word_trie();
+    TrieAutomaton automaton{trie};
     const std::string letters = board.letters;
 
     for (auto _ : state) {
-        auto words = basic_solve_board(trie, letters, board.size);
+        auto words = basic_solve_board(automaton, letters, board.size);
         benchmark::DoNotOptimize(words);
     }
-    state.counters["words"] = static_cast<double>(basic_solve_board(trie, letters, board.size).size());
+    state.counters["words"] = static_cast<double>(basic_solve_board(automaton, letters, board.size).size());
 }
 BENCHMARK_CAPTURE(BM_SolveBoard, 3x3, k3x3)->Unit(benchmark::kMicrosecond);
 BENCHMARK_CAPTURE(BM_SolveBoard, 4x4, k4x4)->Unit(benchmark::kMicrosecond);
@@ -83,7 +84,8 @@ void BM_EndToEnd(benchmark::State& state, Board board) {
 
     for (auto _ : state) {
         Trie trie = load_word_trie();
-        auto words = basic_solve_board(trie, letters, board.size);
+        TrieAutomaton automaton{trie};
+        auto words = basic_solve_board(automaton, letters, board.size);
         benchmark::DoNotOptimize(words);
     }
 }

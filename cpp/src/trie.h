@@ -49,7 +49,7 @@ public:
      * @brief Returns a pointer to the root node.
      * @return Pointer to the root TrieNode.
      */
-    TrieNode* getRoot() const;
+    const TrieNode* getRoot() const;
 
     /**
      * @brief Inserts a word into the Trie.
@@ -70,11 +70,20 @@ public:
      * @return True if at least one word starts with the prefix; false otherwise.
      */
     bool startsWith(const std::string& prefix) const;
+};
 
-private:
-    /**
-     * @brief Recursively clears all nodes from the given node.
-     * @param node The TrieNode to delete.
-     */
-    void clear(TrieNode* node);
+/**
+ * @brief Adapter class to make Trie conform to the CharAutomaton concept.
+ */
+struct TrieAutomaton {
+    using State = const TrieNode*;
+    const Trie& trie;
+
+    TrieAutomaton(const Trie& t) : trie(t) {}
+
+    State root() const;
+    State transition(State s, char c) const;
+    bool valid(State s) const;
+    bool terminal(State s) const;
+
 };
