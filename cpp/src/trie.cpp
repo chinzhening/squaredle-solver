@@ -1,5 +1,8 @@
 #include "trie.h"
 
+#include <cstring>
+#include <stdexcept>
+
 Trie::Trie() {
     root = new TrieNode();
 }
@@ -48,6 +51,67 @@ bool Trie::startsWith(const std::string& prefix) const {
         current = current->children[idx];
     }
     return true;
+}
+
+namespace {
+
+void serialize_node(const TrieNode* node, char incoming_char, std::vector<std::uint8_t>& out) {
+    std::uint32_t mask = 0;
+    for (int i = 0; i < 26; ++i) {
+        if (node->children[i]) mask |= (1u << i);
+    }
+
+    out.push_back(static_cast<std::uint8_t>(incoming_char));
+    out.push_back(node->isEnd ? 1 : 0);
+    const auto* mask_bytes = reinterpret_cast<const std::uint8_t*>(&mask);
+    out.insert(out.end(), mask_bytes, mask_bytes + sizeof(mask));
+
+    for (int i = 0; i < 26; ++i) {
+        if (node->children[i]) {
+            serialize_node(node->children[i], static_cast<char>('A' + i), out);
+        }
+    }
+}
+
+TrieNode* deserialize_node(const std::uint8_t* data, std::size_t size, std::size_t& pos) {
+    if (pos + 6 > size) {
+        throw std::runtime_error("Trie::deserialize: truncated node header");
+    }
+
+    // data[pos] is the incoming char -- informational only here, since the
+    // child's array slot already encodes it.
+    ++pos;
+    bool is_word = data[pos++] != 0;
+
+    std::uint32_t mask;
+    std::memcpy(&mask, data + pos, sizeof(mask));
+    pos += sizeof(mask);
+
+    TrieNode* node = new TrieNode();
+    node->isEnd = is_word;
+
+    for (int i = 0; i < 26; ++i) {
+        if (mask & (1u << i)) {
+            node->children[i] = deserialize_node(data, size, pos);
+        }
+    }
+    return node;
+}
+
+}  // namespace
+
+std::vector<std::uint8_t> Trie::serialize() const {
+    std::vector<std::uint8_t> out;
+    serialize_node(root, '\0', out);
+    return out;
+}
+
+Trie Trie::deserialize(const std::vector<std::uint8_t>& data) {
+    Trie trie;
+    delete trie.root;
+    std::size_t pos = 0;
+    trie.root = deserialize_node(data.data(), data.size(), pos);
+    return trie;
 }
 
 TrieAutomaton::State TrieAutomaton::root() const {

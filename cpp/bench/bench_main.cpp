@@ -62,6 +62,30 @@ void BM_InsertWordsIntoTrie(benchmark::State& state) {
 }
 BENCHMARK(BM_InsertWordsIntoTrie)->Unit(benchmark::kMillisecond);
 
+/** Serialize only, against a trie built once outside the timed region. */
+void BM_SerializeTrie(benchmark::State& state) {
+    Trie trie = load_word_trie();
+
+    for (auto _ : state) {
+        auto bytes = trie.serialize();
+        benchmark::DoNotOptimize(bytes);
+    }
+    state.counters["bytes"] = static_cast<double>(trie.serialize().size());
+}
+BENCHMARK(BM_SerializeTrie)->Unit(benchmark::kMillisecond);
+
+/** Deserialize only, against a byte buffer produced once outside the timed region. */
+void BM_DeserializeTrie(benchmark::State& state) {
+    Trie trie = load_word_trie();
+    const auto bytes = trie.serialize();
+
+    for (auto _ : state) {
+        Trie restored = Trie::deserialize(bytes);
+        benchmark::DoNotOptimize(restored.getRoot());
+    }
+}
+BENCHMARK(BM_DeserializeTrie)->Unit(benchmark::kMillisecond);
+
 /** Search only, against a trie built once outside the timed region. */
 void BM_SolveBoard(benchmark::State& state, Board board) {
     Trie trie = load_word_trie();

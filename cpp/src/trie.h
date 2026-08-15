@@ -1,6 +1,8 @@
 #pragma once
 #include <array>
+#include <cstdint>
 #include <string>
+#include <vector>
 
 /**
  * @brief Node structure for the Trie data structure.
@@ -70,6 +72,21 @@ public:
      * @return True if at least one word starts with the prefix; false otherwise.
      */
     bool startsWith(const std::string& prefix) const;
+
+    /**
+     * @brief Serializes the trie to a byte buffer via pre-order DFS.
+     *
+     * Each node is written as: incoming char (1 byte), is_word (1 byte),
+     * children bitmask (4 bytes, bit i set iff children[i] != nullptr).
+     * Children are then emitted in bitmask order, recursively.
+     */
+    std::vector<std::uint8_t> serialize() const;
+
+    /**
+     * @brief Reconstructs a Trie from a buffer produced by serialize().
+     * @throws std::runtime_error if the buffer is truncated or malformed.
+     */
+    static Trie deserialize(const std::vector<std::uint8_t>& data);
 };
 
 /**
