@@ -18,8 +18,9 @@
  * binary.
  */
 struct SolveStats {
-    size_t recursions = 0;  /**< DFS entries, including immediate rejections. */
-    size_t backtracks = 0;  /**< DFS exits that unwound a placed letter. */
+    size_t recursions = 0;   /**< DFS entries, including immediate rejections. */
+    size_t backtracks = 0;   /**< DFS exits that unwound a placed letter. */
+    size_t transitions = 0;  /**< Automaton transitions attempted, valid or not. */
 };
 
 /**
@@ -103,6 +104,7 @@ std::unordered_set<std::string> solve_impl(const A& automaton, const std::string
 
             // No valid word extension from current node
             char c = board[x][y];
+            if constexpr (Collect) ++stats->transitions;
             typename A::State candidate = automaton.transition(node, c);
 
             if (!automaton.valid(candidate)) {

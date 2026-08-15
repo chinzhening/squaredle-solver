@@ -71,7 +71,9 @@ add_custom_command(TARGET main POST_BUILD
 
 if (BUILD_BENCHMARKS)
     add_executable(bench bench/bench_main.cpp)
-    target_link_libraries(bench PRIVATE solver_core benchmark::benchmark)
+    # psapi backs the working-set counter in BM_Footprint.
+    target_link_libraries(bench PRIVATE solver_core benchmark::benchmark
+        $<$<PLATFORM_ID:Windows>:psapi>)
 
     set_target_properties(bench PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"

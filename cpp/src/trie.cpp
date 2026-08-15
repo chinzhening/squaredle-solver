@@ -55,6 +55,14 @@ bool Trie::startsWith(const std::string& prefix) const {
 
 namespace {
 
+std::size_t count_nodes(const TrieNode* node) {
+    std::size_t total = 1;
+    for (const TrieNode* child : node->children) {
+        if (child) total += count_nodes(child);
+    }
+    return total;
+}
+
 void serialize_node(const TrieNode* node, char incoming_char, std::vector<std::uint8_t>& out) {
     std::uint32_t mask = 0;
     for (int i = 0; i < 26; ++i) {
@@ -99,6 +107,10 @@ TrieNode* deserialize_node(const std::uint8_t* data, std::size_t size, std::size
 }
 
 }  // namespace
+
+std::size_t Trie::nodeCount() const {
+    return count_nodes(root);
+}
 
 std::vector<std::uint8_t> Trie::serialize() const {
     std::vector<std::uint8_t> out;

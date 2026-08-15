@@ -1,5 +1,6 @@
 #pragma once
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -72,6 +73,14 @@ public:
      * @return True if at least one word starts with the prefix; false otherwise.
      */
     bool startsWith(const std::string& prefix) const;
+
+    /**
+     * @brief Counts the nodes in the trie, root included.
+     *
+     * Walks the whole structure, so this is O(nodes) -- a reporting aid for
+     * the benchmark, not something to call in a loop.
+     */
+    std::size_t nodeCount() const;
 
     /**
      * @brief Serializes the trie to a byte buffer via pre-order DFS.

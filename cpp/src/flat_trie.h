@@ -1,5 +1,6 @@
 #pragma once
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <limits>
 #include <string>
@@ -54,6 +55,9 @@ public:
 
     /** @brief Direct access to the node vector, for the CharAutomaton adapter. */
     const std::vector<Node>& nodes() const { return nodes_; }
+
+    /** @brief Counts the nodes in the trie, root included. */
+    std::size_t nodeCount() const { return nodes_.size(); }
 
     /**
      * @brief Serializes the trie: a node-count header followed by a flat
