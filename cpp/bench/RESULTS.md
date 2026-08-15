@@ -1,14 +1,19 @@
 # Benchmark results
 
 Tracks solver performance across the arena-trie (WS1) and CSR-serialization
-(WS2) work. Every number here must be reproducible from a committed JSON run
-in [`results/`](results/) — a figure quoted without its JSON does not count.
+(WS2) work, and the comparison between trie representations (pointer,
+flat-array, and later double-array / sparse / DAWG). Every number here must be
+reproducible from a committed JSON run in [`results/`](results/) — a figure
+quoted without its JSON does not count.
 
 Capture both baselines with one command:
 
 ```powershell
 .\cpp\scripts\benchmark.ps1 -Baseline
 ```
+
+That captures timing only. **Working-set figures need a separate capture** —
+see [Caveat: `-Baseline` cannot measure working set](#caveat--baseline-cannot-measure-working-set).
 
 ## Environment
 
@@ -20,9 +25,15 @@ Capture both baselines with one command:
 | OS | Windows 11 Home 10.0.26200 |
 | Compiler | g++ 16.1.0 (MinGW-w64, x86_64-posix-seh) |
 | Build | CMake 4.0.2, MinGW Makefiles, `-DCMAKE_BUILD_TYPE=Release` |
-| Flags | `-O3 -DNDEBUG -std=gnu++17` |
+| Flags | `-O3 -DNDEBUG` (gnu++20) |
 | Google Benchmark | v1.9.5, pinned via FetchContent |
-| Machine idle | 2026-08-10 capture: yes |
+| Machine idle | 2026-08-10 capture: yes; 2026-08-15 and 2026-08-16: no |
+
+The project requires C++20 (`target_compile_features ... cxx_std_20`) for the
+`CharAutomaton` concept. No `-std=` flag appears in the compile line because
+g++ 16 already defaults to `gnu++20`; CMake would add one for an older
+compiler. Earlier entries here recorded `-std=gnu++17`, which was correct at
+the time.
 
 This is a hybrid U-series laptop part. Thread migration between P- and E-cores
 and sustained-load throttling are real variance sources; ~2% cv is the
@@ -139,6 +150,132 @@ discrepancy in the split itself.
 floor recorded there, including a 252 ms outlier on the first sample) — the
 machine was not confirmed idle for this run. Treat it as indicative, not a
 replacement headline figure.
+
+## Flat-array trie — 2026-08-16
+
+First capture with two representations measured by the same templated
+benchmark bodies. `FlatTrie` stores nodes in one vector with `uint32_t` child
+indices instead of pointers; `Trie` is unchanged. Both are driven through the
+same `CharAutomaton` DFS, so the solve numbers compare data structures rather
+than benchmark code.
+
+Steady-state: [`results/baseline-2026-08-16.json`](results/baseline-2026-08-16.json)
+(10 repetitions, 8s warmup per benchmark).
+
+| Benchmark | Mean | Median | Stddev | cv |
+|---|---|---|---|---|
+| `BM_LoadWordTrie` | 93.88 ms | 92.69 ms | 3.62 ms | 3.86% |
+| `BM_ReadWordLists` | 6.31 ms | 6.30 ms | 0.08 ms | 1.31% |
+| `BM_InsertWordsIntoTrie` | 86.70 ms | 86.62 ms | 4.89 ms | 5.64% |
+| `BM_SerializeTrie` | 20.85 ms | 20.86 ms | 0.10 ms | 0.48% |
+| `BM_DeserializeTrie` | 58.48 ms | 58.66 ms | 0.55 ms | 0.94% |
+| `BM_SolveBoard/3x3` | 8.69 µs | 8.67 µs | 0.07 µs | 0.75% |
+| `BM_SolveBoard/4x4` | 42.28 µs | 42.08 µs | 0.47 µs | 1.12% |
+| `BM_SolveBoard/5x5` | 15.75 µs | 15.64 µs | 0.24 µs | 1.52% |
+| `BM_EndToEnd/4x4` | 88.70 ms | 88.02 ms | 1.82 ms | 2.05% |
+| `BM_LoadFlatWordTrie` | 43.51 ms | 43.47 ms | 0.25 ms | 0.57% |
+| `BM_InsertWordsIntoFlatTrie` | 38.25 ms | 38.00 ms | 1.31 ms | 3.43% |
+| `BM_SerializeFlatTrie` | 15.84 ms | 15.67 ms | 0.35 ms | 2.23% |
+| `BM_DeserializeFlatTrie` | 13.82 ms | 13.84 ms | 0.09 ms | 0.68% |
+| `BM_SolveFlatBoard/3x3` | 9.08 µs | 9.04 µs | 0.17 µs | 1.89% |
+| `BM_SolveFlatBoard/4x4` | 44.61 µs | 44.56 µs | 1.94 µs | 4.34% |
+| `BM_SolveFlatBoard/5x5` | 17.44 µs | 17.30 µs | 0.85 µs | 4.87% |
+| `BM_EndToEndFlat/4x4` | 62.86 ms | 60.99 ms | 3.33 ms | 5.29% |
+
+Cold-start: [`results/coldstart-2026-08-16.json`](results/coldstart-2026-08-16.json)
+(20 fresh `main.exe` invocations on `tests/cpp/5.in`; still the pointer trie —
+the shipped binary is unchanged).
+
+| Metric | Value |
+|---|---|
+| Mean | 147.21 ms |
+| Median | 146.60 ms |
+| Stddev | 10.86 ms (cv 7.38%) |
+| Min / Max | 135.08 / 178.87 ms |
+
+### Size and memory
+
+Structure counters, identical `nodes` confirming both build the same trie:
+
+| | pointer | flat |
+|---|---|---|
+| Nodes | 436,393 | 436,393 |
+| Serialized | 2.50 MiB | 44.95 MiB |
+| Working-set delta | 93.59 MiB | 46.53 MiB |
+
+Working set from [`results/footprint-2026-08-16.json`](results/footprint-2026-08-16.json)
+(8 fresh processes per representation — see the caveat below, this is *not*
+from the `-Baseline` capture).
+
+### Reading these numbers
+
+**Building is where flat wins, not searching.** Insertion is 38.3 ms against
+86.7 ms, and deserialization 13.8 ms against 58.5 ms — 2.3x and 4.2x. Both
+come from the same cause: one vector growth versus 436k individual
+`new TrieNode`. Deserialization is the extreme case, since the flat format is
+a `memcpy` into a single allocation while the pointer format has to rebuild
+every node. This is the "near-zero deserialization cost" reference point the
+flat trie was added to provide.
+
+**Search is a wash, and slightly favours the pointer trie.**
+42.28 µs versus 44.61 µs on 4x4, ~5%, with the flat trie's cv three times
+higher. Index indirection costs about what pointer chasing does at this
+working-set size. Anyone expecting the flat layout to win on locality should
+note it did not: at 108 B per node with 26 slots, a flat node spans two cache
+lines much like a heap-allocated one, and the DFS touches one child per node
+either way. **The `transitions` counters are identical across both
+representations on all three boards** (716 / 3,961 / 1,559, with 35 / 163 / 60
+words), which is the correctness cross-check: both automatons walk exactly the
+same path, so the timing gap is structural rather than behavioural.
+
+**Serialized size and memory footprint move in opposite directions.** The
+pointer trie serializes 18x smaller (2.50 vs 44.95 MiB) but occupies 2x more
+RAM (93.59 vs 46.53 MiB). Its on-disk format is sparse — 6 bytes per node,
+`(char, is_word, 26-bit child bitmask)` — while in memory each `TrieNode` is
+26 pointers plus a bool plus allocator overhead, ~208 B before rounding. The
+flat trie is the reverse: its 108 B fixed-width node is written out verbatim,
+so disk and RAM agree (44.95 vs 46.53 MiB, the gap being the vector's growth
+slack). Small-on-disk and small-in-RAM are not the same property here.
+
+**Flat's serialized form is the mmap-able one**, which the size number
+undersells: children are indices, not pointers, so the bytes can be mapped and
+traversed with no fixup pass. The pointer trie structurally cannot do this at
+any size, because its nodes hold process-local addresses.
+
+### Caveat: `-Baseline` cannot measure working set
+
+`BM_Footprint`'s `rss_delta_mib` in `baseline-2026-08-16.json` reads **0.00 MiB
+for the pointer trie and 44.98 MiB for the flat trie**. Neither is the cost of
+building a trie. The 8s warmup leaves the allocator holding committed pages, so
+the pointer trie's 436k small allocations are served from the free list and the
+working set does not grow at all; the flat trie's single ~45 MB allocation is
+large enough to go to `VirtualAlloc` every time and so still faults in fresh
+pages. The two are measured under different conditions and are not comparable.
+
+The numbers quoted above therefore come from a separate capture, one fresh
+process per sample with warmup disabled:
+
+```powershell
+.\cpp\build\bench.exe --benchmark_filter=BM_Footprint/pointer `
+    --benchmark_min_warmup_time=0 --benchmark_format=json
+```
+
+Those are stable — the pointer figure is identical to 3 decimal places across
+all 8 runs, and flat varies by 0.5 MiB. Read `rss_delta_mib` from
+`footprint-*.json` only; ignore the column in `baseline-*.json`.
+
+This is the same warm-allocator effect documented under *Two regimes* above,
+which is why the cold-start regime exists — it just bites the memory metric
+harder than the timing ones, turning a real 93.59 MiB into a literal zero.
+
+### Capture conditions
+
+The machine was **not confirmed idle** for this capture (an editor and this
+session were running). The timing figures are self-consistent — `BM_SolveBoard`
+holds cv at 1.12% and most benchmarks are under 4% — but treat them as a
+same-run comparison between representations, not as a replacement for the WS0
+headline. The two representations were measured in one process in the order
+shown, so position bias applies to both roughly equally.
 
 ## Measurement methodology
 

@@ -1,0 +1,45 @@
+{
+  "metric": "trie_working_set_delta",
+  "description": "Working-set growth (GetProcessMemoryInfo) across building one trie, each sample from a FRESH process with warmup disabled. The -Baseline capture cannot measure this: its 8s warmup leaves the allocator recycling committed pages, which reports 0 MiB for the pointer trie.",
+  "method": "bench.exe --benchmark_filter=BM_Footprint/<rep> --benchmark_min_warmup_time=0, one process per sample",
+  "runs_per_rep": 8,
+  "date": "2026-08-16T01:45:12.6528769+08:00",
+  "cpu": "12th Gen Intel(R) Core(TM) i7-1255U",
+  "os": "Microsoft Windows 11 Home",
+  "compiler": "g++.exe (x86_64-posix-seh-rev1, Built by MinGW-Builds project) 16.1.0",
+  "nodes": 436393,
+  "pointer": {
+    "mean_mib": 93.59,
+    "median_mib": 93.59,
+    "stddev_mib": 0.002,
+    "min_mib": 93.586,
+    "max_mib": 93.59,
+    "samples_mib": [
+      93.586,
+      93.586,
+      93.59,
+      93.59,
+      93.586,
+      93.59,
+      93.586,
+      93.59
+    ]
+  },
+  "flat": {
+    "mean_mib": 46.53,
+    "median_mib": 46.68,
+    "stddev_mib": 0.217,
+    "min_mib": 46.242,
+    "max_mib": 46.719,
+    "samples_mib": [
+      46.699,
+      46.664,
+      46.242,
+      46.254,
+      46.719,
+      46.703,
+      46.246,
+      46.688
+    ]
+  }
+}
