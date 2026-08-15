@@ -11,6 +11,19 @@ Trie::~Trie() {
     delete root;
 }
 
+Trie::Trie(Trie&& other) noexcept : root(other.root) {
+    other.root = nullptr;
+}
+
+Trie& Trie::operator=(Trie&& other) noexcept {
+    if (this != &other) {
+        delete root;
+        root = other.root;
+        other.root = nullptr;
+    }
+    return *this;
+}
+
 const TrieNode* Trie::getRoot() const {
     return root;
 }

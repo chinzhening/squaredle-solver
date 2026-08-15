@@ -28,6 +28,11 @@ public:
             delete child;
         }
     }
+
+    // Owns its children, so a shallow copy would double-free them. Nodes are
+    // only ever reached through Trie, which never copies them.
+    TrieNode(const TrieNode&) = delete;
+    TrieNode& operator=(const TrieNode&) = delete;
 };
 
 /**
@@ -48,9 +53,18 @@ public:
      */
     ~Trie();
 
+    // The root is owned, so the implicit copy would shallow-copy the pointer
+    // and double-free. Copying a 436k-node trie is never what a caller wants
+    // anyway; move instead. Declaring these also makes the by-value returns
+    // in utils.cpp and the benchmarks correct without relying on NRVO firing.
+    Trie(const Trie&) = delete;
+    Trie& operator=(const Trie&) = delete;
+    Trie(Trie&& other) noexcept;
+    Trie& operator=(Trie&& other) noexcept;
+
     /**
      * @brief Returns a pointer to the root node.
-     * @return Pointer to the root TrieNode.
+     * @return Pointer to the root TrieNode, or nullptr if moved-from.
      */
     const TrieNode* getRoot() const;
 
