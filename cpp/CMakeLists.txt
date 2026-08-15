@@ -2,9 +2,6 @@
 cmake_minimum_required(VERSION 3.16)
 project(SquaredleSolver)
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Default to Release when no build type is specified
@@ -47,6 +44,8 @@ add_library(solver_core STATIC
     src/utils.cpp
     src/trie.cpp
 )
+
+target_compile_features(solver_core PUBLIC cxx_std_20)
 
 target_include_directories(solver_core PUBLIC ${PROJECT_SOURCE_DIR}/src)
 
