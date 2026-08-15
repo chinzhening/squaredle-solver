@@ -12,6 +12,7 @@
  */
 
 #include <string>
+#include <vector>
 
 #include <benchmark/benchmark.h>
 
@@ -40,6 +41,26 @@ void BM_LoadWordTrie(benchmark::State& state) {
     }
 }
 BENCHMARK(BM_LoadWordTrie)->Unit(benchmark::kMillisecond);
+
+/** load_word_trie split: just the file I/O and line parsing, no trie insertion. */
+void BM_ReadWordLists(benchmark::State& state) {
+    for (auto _ : state) {
+        std::vector<std::string> words = read_words_from_files();
+        benchmark::DoNotOptimize(words);
+    }
+}
+BENCHMARK(BM_ReadWordLists)->Unit(benchmark::kMillisecond);
+
+/** load_word_trie split: just trie insertion, against words read once outside the timed region. */
+void BM_InsertWordsIntoTrie(benchmark::State& state) {
+    const std::vector<std::string> words = read_words_from_files();
+
+    for (auto _ : state) {
+        Trie trie = build_trie_from_words(words);
+        benchmark::DoNotOptimize(trie.getRoot());
+    }
+}
+BENCHMARK(BM_InsertWordsIntoTrie)->Unit(benchmark::kMillisecond);
 
 /** Search only, against a trie built once outside the timed region. */
 void BM_SolveBoard(benchmark::State& state, Board board) {

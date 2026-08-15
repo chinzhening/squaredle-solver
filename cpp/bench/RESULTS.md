@@ -93,6 +93,53 @@ agreeing is the best evidence the harness is sound.
 4x4 (39.2 µs) because the 5x5 fixture is a blanked express board: 4 of its 25
 cells are `_`, which terminate the DFS immediately and fragment the grid.
 
+## Load-trie split — 2026-08-15
+
+`load_word_trie` now splits into `read_words_from_files` (file I/O + line
+parsing) and `build_trie_from_words` (trie insertion), each independently
+benchmarked as `BM_ReadWordLists` and `BM_InsertWordsIntoTrie`.
+`BM_LoadWordTrie` is unchanged and still measures the combined cost.
+
+Steady-state: [`results/baseline-2026-08-15.json`](results/baseline-2026-08-15.json)
+(10 repetitions, 8s warmup per benchmark).
+
+| Benchmark | Mean | Median | Stddev | cv |
+|---|---|---|---|---|
+| `BM_LoadWordTrie` | 108.44 ms | 106.61 ms | 11.39 ms | 10.50% |
+| `BM_ReadWordLists` | 7.58 ms | 7.32 ms | 0.90 ms | 11.84% |
+| `BM_InsertWordsIntoTrie` | 85.74 ms | 85.52 ms | 0.84 ms | 0.98% |
+| `BM_SolveBoard/3x3` | 8.55 µs | 8.57 µs | 0.14 µs | 1.69% |
+| `BM_SolveBoard/4x4` | 41.85 µs | 41.77 µs | 0.64 µs | 1.52% |
+| `BM_SolveBoard/5x5` | 18.03 µs | 18.11 µs | 0.61 µs | 3.38% |
+| `BM_EndToEnd/4x4` | 95.83 ms | 95.50 ms | 1.36 ms | 1.42% |
+
+Cold-start: [`results/coldstart-2026-08-15.json`](results/coldstart-2026-08-15.json)
+(20 fresh `main.exe` invocations on `tests/cpp/5.in`).
+
+| Metric | Value |
+|---|---|
+| Mean | 156.33 ms |
+| Median | 143.97 ms |
+| Stddev | 28.60 ms (cv 18.29%) |
+| Min / Max | 137.54 / 252.34 ms |
+
+**Insertion dominates load time.** ~85.7 ms of the load is trie insertion
+against ~7.6 ms of file I/O and line parsing — an 11:1 split. This confirms
+WS1 (arena trie) is targeting the right cost: the `new TrieNode` calls, not
+the file read.
+
+**`BM_LoadWordTrie`'s cv (10.5%) is higher than its 5.7% in the WS0
+baseline**, and read + insert's means (7.58 + 85.74 = 93.3 ms) don't fully
+sum to `BM_LoadWordTrie`'s 108.4 ms mean. Both are the same position-bias /
+allocator-state effect documented below — two more benchmark families now run
+ahead of `BM_LoadWordTrie` in-suite than in the WS0 capture. It is not a
+discrepancy in the split itself.
+
+**This cold-start capture is noisier than WS0's** (cv 18.29% vs the 10.56%
+floor recorded there, including a 252 ms outlier on the first sample) — the
+machine was not confirmed idle for this run. Treat it as indicative, not a
+replacement headline figure.
+
 ## Measurement methodology
 
 The 8s warmup in the capture is not optional, and it is the fix for a real
