@@ -1,2 +1,5 @@
 build/
 .deps/
+
+# Local-only scratch notes
+*.local.md

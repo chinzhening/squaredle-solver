@@ -42,6 +42,7 @@ endif()
 add_library(solver_core STATIC
     src/utils.cpp
     src/trie.cpp
+    src/flat_trie.cpp
 )
 
 target_compile_features(solver_core PUBLIC cxx_std_20)

@@ -16,6 +16,7 @@
 
 #include <benchmark/benchmark.h>
 
+#include "flat_trie.h"
 #include "solver.h"
 #include "utils.h"
 
@@ -26,6 +27,18 @@ struct Board {
     const char* letters;
     int size;
 };
+
+FlatTrie build_flat_trie_from_words(const std::vector<std::string>& words) {
+    FlatTrie trie;
+    for (const auto& word : words) {
+        trie.insert(word);
+    }
+    return trie;
+}
+
+FlatTrie load_flat_word_trie() {
+    return build_flat_trie_from_words(read_words_from_files());
+}
 
 // From tests/cpp/xp/3.in, tests/cpp/5.in and tests/cpp/2.in respectively.
 // The 4x4 is the board every historical number in the tracker was taken on.
@@ -41,6 +54,15 @@ void BM_LoadWordTrie(benchmark::State& state) {
     }
 }
 BENCHMARK(BM_LoadWordTrie)->Unit(benchmark::kMillisecond);
+
+/** Builds the flat-array trie from cpp/data/*.txt. */
+void BM_LoadFlatWordTrie(benchmark::State& state) {
+    for (auto _ : state) {
+        FlatTrie trie = load_flat_word_trie();
+        benchmark::DoNotOptimize(trie.nodes().data());
+    }
+}
+BENCHMARK(BM_LoadFlatWordTrie)->Unit(benchmark::kMillisecond);
 
 /** load_word_trie split: just the file I/O and line parsing, no trie insertion. */
 void BM_ReadWordLists(benchmark::State& state) {
@@ -62,6 +84,17 @@ void BM_InsertWordsIntoTrie(benchmark::State& state) {
 }
 BENCHMARK(BM_InsertWordsIntoTrie)->Unit(benchmark::kMillisecond);
 
+/** load_flat_word_trie split: just trie insertion, against words read once outside the timed region. */
+void BM_InsertWordsIntoFlatTrie(benchmark::State& state) {
+    const std::vector<std::string> words = read_words_from_files();
+
+    for (auto _ : state) {
+        FlatTrie trie = build_flat_trie_from_words(words);
+        benchmark::DoNotOptimize(trie.nodes().data());
+    }
+}
+BENCHMARK(BM_InsertWordsIntoFlatTrie)->Unit(benchmark::kMillisecond);
+
 /** Serialize only, against a trie built once outside the timed region. */
 void BM_SerializeTrie(benchmark::State& state) {
     Trie trie = load_word_trie();
@@ -74,6 +107,18 @@ void BM_SerializeTrie(benchmark::State& state) {
 }
 BENCHMARK(BM_SerializeTrie)->Unit(benchmark::kMillisecond);
 
+/** Serialize only, against a flat trie built once outside the timed region. */
+void BM_SerializeFlatTrie(benchmark::State& state) {
+    FlatTrie trie = load_flat_word_trie();
+
+    for (auto _ : state) {
+        auto bytes = trie.serialize();
+        benchmark::DoNotOptimize(bytes);
+    }
+    state.counters["bytes"] = static_cast<double>(trie.serialize().size());
+}
+BENCHMARK(BM_SerializeFlatTrie)->Unit(benchmark::kMillisecond);
+
 /** Deserialize only, against a byte buffer produced once outside the timed region. */
 void BM_DeserializeTrie(benchmark::State& state) {
     Trie trie = load_word_trie();
@@ -85,6 +130,18 @@ void BM_DeserializeTrie(benchmark::State& state) {
     }
 }
 BENCHMARK(BM_DeserializeTrie)->Unit(benchmark::kMillisecond);
+
+/** Deserialize only, against a byte buffer produced once outside the timed region. */
+void BM_DeserializeFlatTrie(benchmark::State& state) {
+    FlatTrie trie = load_flat_word_trie();
+    const auto bytes = trie.serialize();
+
+    for (auto _ : state) {
+        FlatTrie restored = FlatTrie::deserialize(bytes);
+        benchmark::DoNotOptimize(restored.nodes().data());
+    }
+}
+BENCHMARK(BM_DeserializeFlatTrie)->Unit(benchmark::kMillisecond);
 
 /** Search only, against a trie built once outside the timed region. */
 void BM_SolveBoard(benchmark::State& state, Board board) {
@@ -102,6 +159,22 @@ BENCHMARK_CAPTURE(BM_SolveBoard, 3x3, k3x3)->Unit(benchmark::kMicrosecond);
 BENCHMARK_CAPTURE(BM_SolveBoard, 4x4, k4x4)->Unit(benchmark::kMicrosecond);
 BENCHMARK_CAPTURE(BM_SolveBoard, 5x5, k5x5)->Unit(benchmark::kMicrosecond);
 
+/** Search only, against a flat trie built once outside the timed region. */
+void BM_SolveFlatBoard(benchmark::State& state, Board board) {
+    FlatTrie trie = load_flat_word_trie();
+    FlatTrieAutomaton automaton{trie};
+    const std::string letters = board.letters;
+
+    for (auto _ : state) {
+        auto words = basic_solve_board(automaton, letters, board.size);
+        benchmark::DoNotOptimize(words);
+    }
+    state.counters["words"] = static_cast<double>(basic_solve_board(automaton, letters, board.size).size());
+}
+BENCHMARK_CAPTURE(BM_SolveFlatBoard, 3x3, k3x3)->Unit(benchmark::kMicrosecond);
+BENCHMARK_CAPTURE(BM_SolveFlatBoard, 4x4, k4x4)->Unit(benchmark::kMicrosecond);
+BENCHMARK_CAPTURE(BM_SolveFlatBoard, 5x5, k5x5)->Unit(benchmark::kMicrosecond);
+
 /** Load plus solve -- the number that actually matters. */
 void BM_EndToEnd(benchmark::State& state, Board board) {
     const std::string letters = board.letters;
@@ -114,6 +187,19 @@ void BM_EndToEnd(benchmark::State& state, Board board) {
     }
 }
 BENCHMARK_CAPTURE(BM_EndToEnd, 4x4, k4x4)->Unit(benchmark::kMillisecond);
+
+/** Load plus solve, flat trie. */
+void BM_EndToEndFlat(benchmark::State& state, Board board) {
+    const std::string letters = board.letters;
+
+    for (auto _ : state) {
+        FlatTrie trie = load_flat_word_trie();
+        FlatTrieAutomaton automaton{trie};
+        auto words = basic_solve_board(automaton, letters, board.size);
+        benchmark::DoNotOptimize(words);
+    }
+}
+BENCHMARK_CAPTURE(BM_EndToEndFlat, 4x4, k4x4)->Unit(benchmark::kMillisecond);
 
 }  // namespace
 
