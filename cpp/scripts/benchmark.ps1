@@ -87,7 +87,7 @@ Write-Host "[1/2] Steady-state capture -> $SteadyJson"
 Write-Host ""
 Write-Host "[2/2] Cold-start capture ($ColdRuns fresh processes) -> $ColdJson"
 
-$Fixture = "$RepoRoot\tests\cpp\5.in"
+$Fixture = "$RepoRoot\tests\boards\benchmark-4x4.in"
 $samples = 1..$ColdRuns | ForEach-Object {
     $sw = [Diagnostics.Stopwatch]::StartNew()
     & $Solver $Fixture > $null
@@ -106,7 +106,7 @@ $stddev = [math]::Sqrt(
 [pscustomobject]@{
     metric      = "cold_process_end_to_end"
     description = "Wall clock of a fresh main.exe invocation: load trie, solve, exit."
-    fixture     = "tests/cpp/5.in"
+    fixture     = "tests/boards/benchmark-4x4.in"
     board       = "QUAIHMTNCEIMSSCR"
     board_size  = 4
     runs        = $ColdRuns

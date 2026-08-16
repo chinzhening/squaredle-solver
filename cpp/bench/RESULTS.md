@@ -15,6 +15,13 @@ Capture both baselines with one command:
 That captures timing only. **Working-set figures need a separate capture** —
 see [Caveat: `-Baseline` cannot measure working set](#caveat--baseline-cannot-measure-working-set).
 
+> **Fixture paths changed.** The board fixtures moved from `tests/cpp/` to
+> `tests/boards/` with descriptive names; `tests/cpp/5.in` is now
+> `tests/boards/benchmark-4x4.in`. Board contents are unchanged, so the paths
+> below have been updated in place and every historical number still stands.
+> A JSON in [`results/`](results/) captured before the move records the old
+> path in its `fixture` field — same board, old name.
+
 ## Environment
 
 | | |
@@ -72,7 +79,7 @@ Steady-state: [`results/baseline-2026-08-10.json`](results/baseline-2026-08-10.j
 | `BM_EndToEnd/4x4` | 90.79 ms | 89.48 ms | 3.13 ms | 3.45% |
 
 Cold-start: [`results/coldstart-2026-08-10.json`](results/coldstart-2026-08-10.json)
-(20 fresh `main.exe` invocations on `tests/cpp/5.in`).
+(20 fresh `main.exe` invocations on `tests/boards/benchmark-4x4.in`).
 
 | Metric | Value |
 |---|---|
@@ -125,7 +132,7 @@ Steady-state: [`results/baseline-2026-08-15.json`](results/baseline-2026-08-15.j
 | `BM_EndToEnd/4x4` | 95.83 ms | 95.50 ms | 1.36 ms | 1.42% |
 
 Cold-start: [`results/coldstart-2026-08-15.json`](results/coldstart-2026-08-15.json)
-(20 fresh `main.exe` invocations on `tests/cpp/5.in`).
+(20 fresh `main.exe` invocations on `tests/boards/benchmark-4x4.in`).
 
 | Metric | Value |
 |---|---|
@@ -183,7 +190,7 @@ Steady-state: [`results/baseline-2026-08-16.json`](results/baseline-2026-08-16.j
 | `BM_EndToEndFlat/4x4` | 62.86 ms | 60.99 ms | 3.33 ms | 5.29% |
 
 Cold-start: [`results/coldstart-2026-08-16.json`](results/coldstart-2026-08-16.json)
-(20 fresh `main.exe` invocations on `tests/cpp/5.in`; still the pointer trie —
+(20 fresh `main.exe` invocations on `tests/boards/benchmark-4x4.in`; still the pointer trie —
 the shipped binary is unchanged).
 
 | Metric | Value |
@@ -335,5 +342,5 @@ after the fact, so deferring costs nothing.
 Diagnostic counters live behind a separate flag and must never be timed:
 
 ```powershell
-.\cpp\build\main.exe tests\cpp\5.in --stats
+.\cpp\build\main.exe tests\boards\benchmark-4x4.in --stats
 ```

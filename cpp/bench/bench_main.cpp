@@ -19,7 +19,7 @@
  * baselines under the historical names, and renaming them would silently
  * break comparability with every committed JSON run.
  *
- * Boards are transcribed from tests/cpp rather than read at run time, so the
+ * Boards are transcribed from tests/boards rather than read at run time, so the
  * measurement contains no file I/O beyond what is being measured on purpose.
  */
 
@@ -49,7 +49,9 @@ struct Board {
     int size;
 };
 
-// From tests/cpp/xp/3.in, tests/cpp/5.in and tests/cpp/2.in respectively.
+// From tests/boards/express-3x3-a.in, benchmark-4x4.in and blanked-5x5.in.
+// These are transcribed copies: change a fixture and the benchmark keeps
+// measuring the old board until these constants are updated too.
 // The 4x4 is the board every historical number in the tracker was taken on.
 constexpr Board k3x3{"3x3", "DROEBPMEL", 3};
 constexpr Board k4x4{"4x4", "QUAIHMTNCEIMSSCR", 4};

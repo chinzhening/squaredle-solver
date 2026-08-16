@@ -81,7 +81,7 @@ dependencies.
 ```
 
 Registered benchmarks: `BM_LoadWordTrie`, `BM_SolveBoard/{3x3,4x4,5x5}` and
-`BM_EndToEnd/4x4`. Boards are transcribed from `tests/cpp`.
+`BM_EndToEnd/4x4`. Boards are transcribed from `tests/boards`.
 
 **Before trusting a number**, check the run-to-run spread — this project is
 developed on a hybrid laptop CPU where background load and core migration move
@@ -108,7 +108,7 @@ DFS recursion and backtrack counts are a separate runtime flag, deliberately kep
 out of the timed path — never benchmark a run with it on:
 
 ```powershell
-.\cpp\build\main.exe tests\cpp\5.in --stats
+.\cpp\build\main.exe tests\boards\benchmark-4x4.in --stats
 ```
 
 ## project structure
