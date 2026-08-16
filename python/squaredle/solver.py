@@ -4,7 +4,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-from squaredle.board_parser import BoardInfo
+from squaredle.board import BoardInfo
 from squaredle.config import config
 
 
@@ -25,9 +25,7 @@ def solve(board: BoardInfo, solver_path: Path | None = None) -> list[str]:
     # temp file for input.
     with tempfile.TemporaryDirectory() as tmp:
         board_file = Path(tmp) / "board_info.txt"
-        board_file.write_text(
-            f"{board.rating} {board.letters} {board.board_size}\n", encoding="utf-8"
-        )
+        board.write_to(board_file)
         result = subprocess.run(
             [str(binary), str(board_file)],
             capture_output=True,

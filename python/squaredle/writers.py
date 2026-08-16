@@ -7,7 +7,7 @@ from typing import Any, Protocol, Self
 
 from pymongo import AsyncMongoClient
 
-from squaredle.board_parser import BoardInfo
+from squaredle.board import BoardInfo
 from squaredle.config import Config
 
 

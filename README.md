@@ -46,10 +46,13 @@ Python dependencies (Playwright, BeautifulSoup4, pydantic-settings, pymongo) are
 
    This writes `cpp/build/main.exe`, which is where `SOLVER_PATH` points by default.
 
-5. **Run the tests.** Requires step 4 to have been run first. On Windows (PowerShell):
+5. **Run the tests.** Requires step 4 to have been run first. The fixture
+   tests drive the binary through `squaredle.solver.solve`, so they run
+   anywhere Python does:
 
    ```powershell
-   .\cpp\scripts\test.ps1
+   cd python
+   uv run pytest -v
    ```
 
 ## usage
@@ -58,7 +61,7 @@ Run the Python script:
 
 ```powershell
 cd python
-uv run main.py
+uv run python -m squaredle
 ```
 
 ## benchmarking
@@ -127,14 +130,17 @@ out of the timed path — never benchmark a run with it on:
 │   ├── src
 │   └── scripts
 │       ├── build.ps1
-│       ├── test.ps1
 │       └── benchmark.ps1
 ├── python
-│   ├── main.py
-│   ├── board_parser.py
-│   ├── config.py
-│   ├── squaredle.py
-│   ├── writers.py
+│   ├── squaredle
+│   │   ├── __main__.py
+│   │   ├── board.py
+│   │   ├── client.py
+│   │   ├── config.py
+│   │   ├── solver.py
+│   │   └── writers.py
+│   ├── tests
+│   │   └── test_solver.py
 │   ├── pyproject.toml
 │   ├── uv.lock
 │   └── .env.example

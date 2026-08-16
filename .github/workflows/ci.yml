@@ -1,0 +1,43 @@
+name: CI
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Build C++ solver
+        working-directory: cpp
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --config Release
+
+      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 #v9.0.0
+        with:
+          working-directory: python
+          enable-cache: true
+
+      # pre-commit runs ruff on commit and mypy on pre-push, but neither runs
+      # for a push made with --no-verify or a clone without hooks installed.
+      - name: Lint
+        working-directory: python
+        run: |
+          uv run ruff check .
+          uv run ruff format --check .
+
+      - name: Type check
+        working-directory: python
+        run: uv run mypy .
+
+      - name: Run tests
+        working-directory: python
+        run: uv run pytest -v
+        env:
+          # config.py defaults to the Windows main.exe; Linux builds `main`.
+          SOLVER_PATH: ${{ github.workspace }}/cpp/build/main
