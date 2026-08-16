@@ -35,6 +35,6 @@ def test_fixture(in_path: Path) -> None:
     assert out_path.exists(), f"missing expected output for {in_path.name}"
 
     expected = out_path.read_text(encoding="utf-8").split()
-    actual = solve(BoardInfo.try_from_file(in_path))
+    actual = solve(BoardInfo.from_file(in_path))
 
     assert actual == expected

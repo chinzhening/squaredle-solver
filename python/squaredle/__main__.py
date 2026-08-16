@@ -1,8 +1,11 @@
 import asyncio
 import logging
 
-from squaredle.board import BoardInfo
-from squaredle.client import PlaywrightSquaredleClient, SquaredleClient
+from squaredle.client import (
+    PlaywrightSquaredleClient,
+    SquaredleClient,
+    parse_board,
+)
 from squaredle.config import config
 from squaredle.solver import solve
 from squaredle.writers import SolveResult, build_writer
@@ -20,7 +23,7 @@ async def main() -> None:
 
     try:
         board_html = await client.get_board_html(config.URL)
-        board_info = BoardInfo.try_from_html(board_html)
+        board_info = parse_board(board_html)
 
         words = solve(board_info)
         logging.info(f"Words found: {len(words)}")
