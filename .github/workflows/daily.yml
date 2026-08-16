@@ -72,7 +72,7 @@ jobs:
       - name: Solve Squaredle
         working-directory: python
         run: |
-          uv run --no-dev python main.py
+          uv run --no-dev python -m squaredle
         env:
           SOLVER_PATH: ${{ github.workspace }}/cpp/build/main
           ENABLE_MONGO_WRITER: "true"

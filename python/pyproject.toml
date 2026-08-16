@@ -49,3 +49,11 @@ strict = true
 warn_unused_configs = true
 warn_return_any = true
 warn_unused_ignores = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# Puts python/ on sys.path so `import squaredle` resolves. A package directory
+# alone is not enough: `uv run pytest` invokes the console script, which does
+# not add the working directory the way `python -m` does, and the project has
+# no [build-system] so uv never installs it into the venv.
+pythonpath = ["."]

@@ -5,8 +5,8 @@ from typing import Self
 from pydantic import SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-PACKAGE_ROOT = Path(__file__).resolve().parent
-PROJECT_ROOT = PACKAGE_ROOT.parent
+PACKAGE_ROOT = Path(__file__).resolve().parent  # python/squaredle
+PROJECT_ROOT = PACKAGE_ROOT.parent.parent  # repo root
 
 
 class Config(BaseSettings):
@@ -20,7 +20,7 @@ class Config(BaseSettings):
     model_config = SettingsConfigDict(
         # Absolute, so the settings load the same way regardless of the
         # working directory the solver is invoked from.
-        env_file=PACKAGE_ROOT / ".env",
+        env_file=PACKAGE_ROOT.parent / ".env",
         env_file_encoding="utf-8",
         extra="ignore",
     )
