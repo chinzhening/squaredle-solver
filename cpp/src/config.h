@@ -1,6 +1,4 @@
-#ifndef CONFIG_H
-#define CONFIG_H
-
+#pragma once
 #include <cstddef>
 
 #ifndef DATA_DIR
@@ -13,5 +11,3 @@ constexpr const char* WORD_LISTS[] = {
 };
 
 constexpr size_t WORD_LIST_COUNT = sizeof(WORD_LISTS) / sizeof(WORD_LISTS[0]);
-
-#endif

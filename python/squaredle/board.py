@@ -1,4 +1,3 @@
-import logging
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Self
@@ -31,12 +30,3 @@ class BoardInfo:
             )
         except ValueError as e:
             raise ValueError(f"Invalid board file format: {path}") from e
-
-    def write_to(self, path: Path) -> None:
-        """Write the board in the format the C++ solver's `>>` parsing expects."""
-        # write_text returns the character count and raises on failure, so
-        # there is no return value worth branching on.
-        path.write_text(
-            f"{self.rating} {self.letters} {self.board_size}\n", encoding="utf-8"
-        )
-        logging.debug(f"Wrote board to {path}")

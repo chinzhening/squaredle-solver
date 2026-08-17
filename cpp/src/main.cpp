@@ -2,14 +2,14 @@
  * @file main.cpp
  * @brief Entry point for the Squaredle Solver program.
  *
- * This program reads board information from a file, loads a word Trie,
- * solves the board to find valid words, and outputs the results either
- * to the console or to an output file.
+ * This program takes a board on the command line, loads a word Trie, solves
+ * the board to find valid words, and writes them to stdout one per line.
  */
 
 #include <algorithm>
-#include <fstream>
+#include <cstddef>
 #include <iostream>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -19,10 +19,66 @@
 namespace {
 
 void print_usage(const char* prog) {
-    std::cerr << "Usage: " << prog << " <board.in> [solution.out] [--stats]\n";
+    std::cerr << "Usage: " << prog << " <letters> <size> [--stats]\n";
 }
 
-}  // namespace
+struct Args {
+    std::vector<std::string> positional;
+    bool want_stats = false;
+};
+
+/**
+ * @brief Parses a board size, rejecting anything std::stoi would wave through.
+ *
+ * stoi stops at the first non-digit, so it reads "4xyz" as 4, and reports a
+ * bad string by throwing std::invalid_argument, whose what() is just "stoi".
+ * Neither makes for a usable error, so parse the whole argument here.
+ */
+int parse_size(const std::string& arg) {
+    std::size_t consumed = 0;
+    int value = 0;
+    try {
+        value = std::stoi(arg, &consumed);
+    } catch (const std::exception&) {
+        throw std::runtime_error("Board size is not a number: " + arg);
+    }
+    if (consumed != arg.size()) {
+        throw std::runtime_error("Board size is not a number: " + arg);
+    }
+    return value;
+}
+
+/**
+ * @brief Rejects a letters string the solver could only answer with silence.
+ *
+ * Every cell has to be A-Z or the '_' that stands in for a blanked cell.
+ * Without this a lowercase or punctuated board is not an error: the automaton
+ * simply never transitions, and the run exits 0 having printed nothing, which
+ * reads exactly like a board that genuinely has no words.
+ */
+void validate_letters(const std::string& letters) {
+    for (const char c : letters) {
+        if ((c < 'A' || c > 'Z') && c != '_') {
+            throw std::runtime_error(
+                std::string("Board letters must be A-Z or '_', found: ") + c);
+        }
+    }
+}
+
+Args argparse(int argc, char* argv[]) {
+    Args args;
+    for (int i = 1; i < argc; ++i) {
+        std::string arg = argv[i];
+        if (arg == "--stats") {
+            args.want_stats = true;
+        } else {
+            args.positional.push_back(arg);
+        }
+    }
+    return args;
+}
+
+}
 
 int main(int argc, char* argv[]) {
     /**
@@ -30,8 +86,8 @@ int main(int argc, char* argv[]) {
      *
      * @param argc Number of command-line arguments.
      * @param argv Array of command-line arguments.
-     *             argv[1]: input file path (required)
-     *             argv[2]: output file path (optional)
+     *             argv[1]: letters (required)
+     *             argv[2]: board size (required)
      *             --stats: report DFS counters on stderr (diagnostic only;
      *                      never time a run with this on -- see cpp/bench)
      *
@@ -39,28 +95,34 @@ int main(int argc, char* argv[]) {
      */
 
     try {
-        bool want_stats = false;
-        std::vector<const char*> positional;
+        Args args = argparse(argc, argv);
 
-        for (int i = 1; i < argc; ++i) {
-            std::string arg = argv[i];
-            if (arg == "--stats") {
-                want_stats = true;
-            } else {
-                positional.push_back(argv[i]);
-            }
+        if (args.positional.size() < 2) {
+            print_usage(argv[0]);
+            return 1;
         }
-
-        if (positional.empty()) {
+        if (args.positional.size() > 2) {
+            std::cerr << "Too many positional arguments.\n";
             print_usage(argv[0]);
             return 1;
         }
 
-        double rating;
-        std::string letters;
-        int boardSize;
+        const auto& letters = args.positional[0];
+        const int boardSize = parse_size(args.positional[1]);
+        const bool want_stats = args.want_stats;
 
-        read_board_info(positional[0], rating, letters, boardSize);
+        // Ordered so the bound is established before it is relied on: the
+        // range check keeps the product below in range, and both run before
+        // the solver indexes anything.
+        if (boardSize > 6 || boardSize < 3) {
+            throw std::runtime_error("boardSize must be between 3 and 6.");
+        }
+
+        if (letters.size() != boardSize * boardSize) {
+            throw std::runtime_error("letters and boardSize do not match.");
+        }
+
+        validate_letters(letters);
 
         Trie wordTrie = load_word_trie();
         TrieAutomaton automaton{wordTrie};
@@ -81,15 +143,8 @@ int main(int argc, char* argv[]) {
         std::vector<std::string> sorted_words(words.begin(), words.end());
         std::sort(sorted_words.begin(), sorted_words.end());
 
-        if (positional.size() >= 2) {
-            std::ofstream out(positional[1]);
-            for (const auto& word : sorted_words) {
-                out << word << std::endl;
-            }
-        } else {
-            for (const auto& word : sorted_words) {
-                std::cout << word << std::endl;
-            }
+        for (const auto& word : sorted_words) {
+            std::cout << word << std::endl;
         }
 
         return 0;

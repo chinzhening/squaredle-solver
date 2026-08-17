@@ -111,7 +111,7 @@ DFS recursion and backtrack counts are a separate runtime flag, deliberately kep
 out of the timed path — never benchmark a run with it on:
 
 ```powershell
-.\cpp\build\main.exe tests\boards\benchmark-4x4.in --stats
+.\cpp\build\main.exe QUAIHMTNCEIMSSCR 4 --stats
 ```
 
 ## project structure

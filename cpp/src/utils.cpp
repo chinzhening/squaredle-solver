@@ -6,14 +6,6 @@
 
 #include "utils.h"
 
-void read_board_info(const std::string& path, double& rating, std::string& letters, int& boardSize) {
-    std::ifstream file(path);
-    if (!file)
-        throw std::runtime_error("Failed to open: " + path);
-    file >> rating >> letters >> boardSize;
-}
-
-
 std::vector<std::string> read_words_from_files() {
     std::vector<std::string> words;
 

@@ -1,7 +1,6 @@
 """Invoke the C++ solver binary and return the words found."""
 
 import subprocess
-import tempfile
 from pathlib import Path
 
 from squaredle.board import BoardInfo
@@ -21,17 +20,14 @@ def solve(board: BoardInfo, solver_path: Path | None = None) -> list[str]:
     if not binary.exists():
         raise SolverError(f"Solver binary not found at {binary}")
 
-    # The binary still reads its board from a file; stdout is supported, need
-    # temp file for input.
-    with tempfile.TemporaryDirectory() as tmp:
-        board_file = Path(tmp) / "board_info.txt"
-        board.write_to(board_file)
-        result = subprocess.run(
-            [str(binary), str(board_file)],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
+    # The binary accepts letters and board_size as cli arguments; output
+    # is written to stdout, one word per line, sorted.
+    result = subprocess.run(
+        [str(binary), board.letters, str(board.board_size)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
 
     if result.returncode != 0:
         raise SolverError(

@@ -66,7 +66,11 @@ std::unordered_set<std::string> solve_impl(const A& automaton, const std::string
                                            SolveStats* stats) {
     std::unordered_set<std::string> found;
 
-    char buffer[20];
+    // `visited` stops any cell being reused, so a path can never be longer
+    // than the board has cells -- a bound that holds whatever the dictionary
+    // contains. std::vector and not `char[letters.size()]`: that would be a
+    // VLA, which ISO C++ forbids (g++ takes it, MSVC does not).
+    std::vector<char> buffer(letters.size());
     int path_len = 0;
 
     const int N = size;
@@ -118,7 +122,7 @@ std::unordered_set<std::string> solve_impl(const A& automaton, const std::string
 
             // Add valid word to result
             if (automaton.terminal(candidate) && path_len >= 4) {
-                found.insert(std::string(buffer, path_len));
+                found.insert(std::string(buffer.data(), path_len));
             }
 
             // Search neighbors
