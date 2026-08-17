@@ -38,6 +38,3 @@ jobs:
       - name: Run tests
         working-directory: python
         run: uv run pytest -v
-        env:
-          # config.py defaults to the Windows main.exe; Linux builds `main`.
-          SOLVER_PATH: ${{ github.workspace }}/cpp/build/main

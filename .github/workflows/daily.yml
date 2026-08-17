@@ -66,14 +66,12 @@ jobs:
         run: |
           uv run --no-dev playwright install --with-deps chromium
 
-      # Scrape the board, solve it, and write the result. SOLVER_PATH is
-      # overridden because config.py defaults to the Windows main.exe, while
-      # this runner builds cpp/build/main.
+      # Scrape the board, solve it, and write the result. SOLVER_PATH needs no
+      # override: config.py derives the binary name from the platform.
       - name: Solve Squaredle
         working-directory: python
         run: |
           uv run --no-dev python -m squaredle
         env:
-          SOLVER_PATH: ${{ github.workspace }}/cpp/build/main
           ENABLE_MONGO_WRITER: "true"
           MONGO_URI: ${{ secrets.MONGO_URI }}

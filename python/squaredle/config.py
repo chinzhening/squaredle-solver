@@ -1,4 +1,5 @@
-import logging
+import sys
+from functools import lru_cache
 from pathlib import Path
 from typing import Self
 
@@ -8,9 +9,12 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 PACKAGE_ROOT = Path(__file__).resolve().parent  # python/squaredle
 PROJECT_ROOT = PACKAGE_ROOT.parent.parent  # repo root
 
+# Derived here so neither workflow needs a SOLVER_PATH override.
+SOLVER_NAME = "main.exe" if sys.platform == "win32" else "main"
+
 
 class Config(BaseSettings):
-    """Runtime settings, sourced from python/.env — see .env.example.
+    """Runtime settings, sourced from python/.env - see .env.example.
 
     Real environment variables win over .env entries, so CI can inject secrets
     without writing a file. Every field keeps a working default, so a fresh
@@ -31,7 +35,7 @@ class Config(BaseSettings):
     USE_XP: bool = False
 
     # Solver binary built from cpp/
-    SOLVER_PATH: Path = PROJECT_ROOT / "cpp" / "build" / "main.exe"
+    SOLVER_PATH: Path = PROJECT_ROOT / "cpp" / "build" / SOLVER_NAME
 
     # Result writers — MongoDB is opt-in since it needs a URI
     ENABLE_STDOUT_WRITER: bool = True
@@ -52,6 +56,11 @@ class Config(BaseSettings):
         return self
 
 
-logging.basicConfig(level=logging.INFO)
+@lru_cache(maxsize=1)
+def get_config() -> Config:
+    """The process-wide settings, built on first use.
 
-config = Config()
+    Lazy, not a module-level Config(): that validated the environment as an
+    import side effect, so a bad MONGO_URI failed an import rather than a run.
+    """
+    return Config()

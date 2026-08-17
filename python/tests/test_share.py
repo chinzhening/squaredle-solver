@@ -1,7 +1,7 @@
 """Tests for the share-text parsers.
 
-Samples are real share texts. Add new ones rather than editing an existing one:
-a rewritten sample cannot catch the day the format drifts.
+Samples are real. Add new ones rather than editing one: a rewritten sample
+cannot catch the day the format drifts.
 """
 
 from datetime import UTC, date, datetime
@@ -25,10 +25,7 @@ SAMPLE_2026_08_16 = """I played https://squaredle.com 08/16:
 
 class TestPuzzleDayOf:
     def test_before_turnover_is_the_previous_puzzle(self) -> None:
-        """Turnover is 10:00 UTC, so an 07:36 run is still on yesterday's board.
-
-        From a real manual run: solved_at 2026-08-04 07:36 UTC, share text 08/03.
-        """
+        """Real run: solved_at 2026-08-04 07:36 UTC, share text 08/03."""
         assert puzzle_day_of(datetime(2026, 8, 4, 7, 36, tzinfo=UTC)) == date(
             2026, 8, 3
         )

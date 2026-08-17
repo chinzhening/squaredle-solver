@@ -4,7 +4,7 @@ import subprocess
 from pathlib import Path
 
 from squaredle.board import BoardInfo
-from squaredle.config import config
+from squaredle.config import get_config
 
 
 class SolverError(RuntimeError):
@@ -16,7 +16,7 @@ def solve(board: BoardInfo, solver_path: Path | None = None) -> list[str]:
 
     The binary sorts its own output, so the returned order is the binary's
     """
-    binary = solver_path or config.SOLVER_PATH
+    binary = solver_path or get_config().SOLVER_PATH
     if not binary.exists():
         raise SolverError(f"Solver binary not found at {binary}")
 

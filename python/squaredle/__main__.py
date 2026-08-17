@@ -6,12 +6,14 @@ from squaredle.client import (
     SquaredleClient,
     parse_board,
 )
-from squaredle.config import config
+from squaredle.config import get_config
 from squaredle.solver import solve
 from squaredle.writers import SolveResult, build_writer
 
 
 async def main() -> None:
+    config = get_config()
+
     # Playwright setup
     client: SquaredleClient = PlaywrightSquaredleClient()
     await client.start()
@@ -51,4 +53,6 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
+    # Root logger setup belongs to the entry point, not an imported module.
+    logging.basicConfig(level=logging.INFO)
     asyncio.run(main())
