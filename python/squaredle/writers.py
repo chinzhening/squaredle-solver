@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from types import TracebackType
 from typing import Any, Protocol, Self
 
@@ -9,6 +9,27 @@ from pymongo import AsyncMongoClient
 
 from squaredle.board import BoardInfo
 from squaredle.config import Config
+from squaredle.share import puzzle_date_from_run
+
+# The shape as_document() produces. Not in config.py: an operator has no
+# business setting it, and keeping it beside the method that defines the shape
+# means both change in the same diff. Migrations import this.
+#
+# 1: adds puzzle_date and puzzle_date_source. An unversioned document predates
+#    both, and predates any measurement of rejected words.
+SCHEMA_VERSION = 1
+
+
+def as_bson_date(day: date | None) -> datetime | None:
+    """Widen a calendar day to the datetime BSON stores.
+
+    BSON has no date type, so a bare date cannot be encoded. Midnight UTC is
+    the canonical widening and the time component means nothing; everything
+    writes it identically, so exact-match lookups are reliable.
+    """
+    if day is None:
+        return None
+    return datetime(day.year, day.month, day.day, tzinfo=UTC)
 
 
 @dataclass
@@ -19,7 +40,17 @@ class SolveResult:
     board: BoardInfo
     words: list[str]
     share_text: str
+    puzzle_date: date | None = None
     solved_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+
+    def __post_init__(self) -> None:
+        """Derive puzzle_date so no caller can forget to.
+
+        Both inputs the parse needs are already fields here. An explicit value
+        still wins, which is what lets a migration supply its own.
+        """
+        if self.puzzle_date is None:
+            self.puzzle_date = puzzle_date_from_run(self.share_text, self.solved_at)
 
     def as_document(self) -> dict[str, Any]:
         """Flatten into a document suitable for storage."""
@@ -31,8 +62,23 @@ class SolveResult:
             "words": self.words,
             "word_count": len(self.words),
             "share_text": self.share_text,
+            "puzzle_date": as_bson_date(self.puzzle_date),
             "solved_at": self.solved_at,
+            "schema_version": SCHEMA_VERSION,
         }
+
+    def identity(self) -> dict[str, Any]:
+        """The upsert filter identifying this document's puzzle.
+
+        identity: (url, puzzle_date)
+
+        Letters is the fallback for an unparsed date, so a failed parse still
+        replaces its own earlier attempt. That case is deliberately outside the
+        unique index - there is no identity to enforce without a date.
+        """
+        if self.puzzle_date is not None:
+            return {"url": self.url, "puzzle_date": as_bson_date(self.puzzle_date)}
+        return {"url": self.url, "letters": self.board.letters}
 
 
 class ResultWriter(Protocol):
@@ -66,8 +112,8 @@ class StdoutWriter:
 class MongoWriter:
     """Stores the full result in MongoDB, upserted per puzzle.
 
-    A puzzle is identified by its URL and letters, so re-running the solver on
-    the same board refreshes the document instead of duplicating it.
+    A puzzle is identified by SolveResult.identity(), so re-running the solver
+    on the same puzzle refreshes its document instead of duplicating it.
     """
 
     def __init__(self, uri: str, database: str, collection: str) -> None:
@@ -77,12 +123,15 @@ class MongoWriter:
     async def write(self, result: SolveResult) -> None:
         document = result.as_document()
         outcome = await self._collection.replace_one(
-            {"url": document["url"], "letters": document["letters"]},
+            result.identity(),
             document,
             upsert=True,
         )
         action = "inserted" if outcome.upserted_id else "updated"
-        logging.info(f"MongoDB: {action} result for board {document['letters']}")
+        logging.info(
+            f"MongoDB: {action} result for puzzle {result.puzzle_date} "
+            f"(board {document['letters']})"
+        )
 
     async def close(self) -> None:
         await self._client.close()

@@ -158,25 +158,24 @@ class PlaywrightSquaredleClient:
         if self._page is None:
             raise RuntimeError("Playwright client not started. Call start() first.")
 
-        popups = await self._page.query_selector_all(".popup")
-
         logging.info("Inputting found words...")
         for word in words:
             await self._page.type("body", word)
             await self._page.keyboard.press("Enter")
-
-            for popup in popups:
-                if await popup.is_visible():
-                    close = await popup.query_selector(".closeBtn")
-                    if close:
-                        await close.click()
-
-            # Close explainers if they appear
+            await self._close_popups()
             await self._close_explainer()
 
         await self._close_explainer()
-
         logging.info("All words inputted.")
+
+    async def _close_popups(self) -> None:
+        if self._page is None:
+            raise RuntimeError("Playwright client not started. Call start() first.")
+        for popup in await self._page.query_selector_all(".popup"):
+            if await popup.is_visible():
+                close = await popup.query_selector(".closeBtn")
+                if close:
+                    await close.click()
 
     async def _close_explainer(self) -> None:
         if self._page is None:
@@ -187,7 +186,7 @@ class PlaywrightSquaredleClient:
                 element = await self._page.query_selector(f"#{element_id}")
                 if element and await element.is_visible():
                     await self._page.click(f"#{element_id}")
-                return
+                    return
             except Exception as e:
                 logging.error(f"Error closing explainer: {e}")
                 continue

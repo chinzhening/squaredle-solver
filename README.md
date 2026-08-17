@@ -1,16 +1,16 @@
 # squaredle-solver
 
-Solves [Squaredle](https://www.squaredle.app/). Written in C++ for performance.  
-It scrapes the board from the website, preprocesses it, then solves the board using a Trie-based backtracking algorithm.
+Solves [Squaredle](https://squaredle.app/). Client and solver are separated: the Python client scrapes the board and plays the game,
+while the C++ solver is a standalone executable that solves the board using a backtracking algorithm routed through a character automaton (Trie).
 
 ## requirements
 
 - Python 3.13+
 - [uv](https://docs.astral.sh/uv/getting-started/installation/) (manages the virtual environment and Python dependencies)
-- g++ with C++17 support (MinGW on Windows)
+- g++ with C++20 support (MinGW on Windows)
 - CMake 3.16+: https://cmake.org/download/
 
-Python dependencies (Playwright, BeautifulSoup4, pydantic-settings, pymongo) are declared in `python/pyproject.toml` and installed by `uv sync`.
+Python dependencies (Playwright, BeautifulSoup4, pydantic-settings, ...) are declared in `python/pyproject.toml` and installed by `uv sync`.
 
 ## installation
 
@@ -145,6 +145,5 @@ out of the timed path — never benchmark a run with it on:
 │   ├── uv.lock
 │   └── .env.example
 └── tests
-    └── cpp
-        └── xp
+    └── boards
 ```
