@@ -13,6 +13,22 @@ from playwright.async_api import (
 )
 
 from squaredle.board import BoardInfo
+from squaredle.results import SolutionState, WordOutcomes, classify, parse_solution
+
+# Solution blobs for one board only. The mode is an argument rather than a
+# field parsed back out later, and the two patterns are exact because
+# "-solution" is a suffix of "-xp-solution" -- an endsWith would match both and
+# reading the wrong board's blob marks every word rejected.
+_READ_SOLUTIONS_JS = """
+    (xp) => {
+        const re = xp
+            ? /^squaredle-\\d{4}\\/\\d{2}\\/\\d{2}-xp-solution$/
+            : /^squaredle-\\d{4}\\/\\d{2}\\/\\d{2}-solution$/;
+        return Object.keys(localStorage)
+            .filter(k => re.test(k))
+            .map(k => ({ key: k, value: localStorage.getItem(k) }));
+    }
+"""
 
 
 def parse_board(html: str) -> BoardInfo:
@@ -100,9 +116,9 @@ class SquaredleClient(Protocol):
         """Navigate to URL, dismiss onboarding, return page HTML with board."""
         ...
 
-    async def input_words(self, words: list[str]) -> None:
-        """Type words into the board, dismissing any feedback
-        popups and the explainer overlay as they appear."""
+    async def input_words(self, words: list[str]) -> WordOutcomes | None:
+        """Type words into the board, dismissing any feedback popups and the
+        explainer overlay as they appear, and report what each word did."""
         ...
 
     async def get_results(self) -> str:
@@ -154,7 +170,7 @@ class PlaywrightSquaredleClient:
         await self._page.wait_for_selector(".board")
         return await self._page.content()
 
-    async def input_words(self, words: list[str]) -> None:
+    async def input_words(self, words: list[str]) -> WordOutcomes | None:
         if self._page is None:
             raise RuntimeError("Playwright client not started. Call start() first.")
 
@@ -162,11 +178,61 @@ class PlaywrightSquaredleClient:
         for word in words:
             await self._page.type("body", word)
             await self._page.keyboard.press("Enter")
+
             await self._close_popups()
             await self._close_explainer()
 
         await self._close_explainer()
-        logging.info("All words inputted.")
+
+        # After every submission, so every write has landed: this is the only
+        # read, and needs no baseline.
+        state = await self._read_solution_state()
+        if state is None:
+            logging.warning("No solution state readable; outcomes not measured")
+            return None
+
+        outcomes = classify(words, state)
+        logging.info(
+            f"Submitted {len(words)}: {len(outcomes.accepted)} accepted, "
+            f"{len(outcomes.bonus)} bonus, {len(outcomes.rejected)} rejected"
+        )
+        return outcomes
+
+    async def _read_solution_state(self) -> SolutionState | None:
+        """Squaredle's record of the board being played, snapshotted from localStorage.
+
+        Requires exactly one stored solution for the current mode.
+        """
+        if self._page is None:
+            raise RuntimeError("Playwright client not started. Call start() first.")
+
+        # The mode comes from the URL navigated to, so the client needs no
+        # config to know which board it is on.
+        is_xp = "level=xp" in self._page.url
+
+        try:
+            entries = await self._page.evaluate(_READ_SOLUTIONS_JS, is_xp)
+        except Exception as e:
+            logging.warning(f"Could not read localStorage: {e}")
+            return None
+
+        states = [
+            state
+            for entry in entries
+            if (state := parse_solution(entry["key"], entry["value"])) is not None
+        ]
+
+        # A persistent profile can hold several days for the same mode, and
+        # reading the wrong one marks every word rejected -- so refuse rather
+        # than pick.
+        if len(states) != 1:
+            logging.warning(
+                f"Expected one stored {'xp' if is_xp else 'normal'} solution, "
+                f"found {len(states)}"
+            )
+            return None
+
+        return states[0]
 
     async def _close_popups(self) -> None:
         if self._page is None:

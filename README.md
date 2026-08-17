@@ -64,6 +64,41 @@ cd python
 uv run python -m squaredle
 ```
 
+## result schema
+
+One MongoDB document per puzzle, upserted on `(url, puzzle_date)` enforced by
+a partial unique index over documents whose `puzzle_date` is a real date.
+
+```js
+{
+  url, rating, letters, board_size,   // the board, as scraped
+  words, word_count,                  // what the solver submitted
+  share_text,                         // raw share popup text
+  puzzle_date,                        // datetime at midnight UTC; BSON no date
+  puzzle_date_source,                 // "share_text" | "inferred" (backfill only)
+  solved_at,                          // when the run happened
+  schema_version: 2,
+  outcomes: {                         // null when not measured
+    accepted, bonus, rejected,        // submitted words by what Squaredle credited
+    accepted_count, bonus_count, rejected_count,
+    total_credited_words,             // Squaredle's tally, all credited words
+    non_word_count,                   // Squaredle's tally, rejections
+    solution_key                      // its localStorage key, verbatim
+  }
+}
+```
+
+`outcomes` comes from the solution blob Squaredle keeps in localStorage, read
+once after word input.
+
+`schema_version` marks what a document carries
+- unversioned predates `puzzle_date`
+- version 1 predates `outcomes`.
+
+A null `outcomes` means the run measured nothing, not nothing rejected.
+
+`puzzle_date` is derived from the share text.
+
 ## benchmarking
 
 Timings come from [Google Benchmark](https://github.com/google/benchmark), pinned to
@@ -86,7 +121,7 @@ dependencies.
 Registered benchmarks: `BM_LoadWordTrie`, `BM_SolveBoard/{3x3,4x4,5x5}` and
 `BM_EndToEnd/4x4`. Boards are transcribed from `tests/boards`.
 
-**Before trusting a number**, check the run-to-run spread — this project is
+**Before trusting a number**, check the run-to-run spread. This project is
 developed on a hybrid laptop CPU where background load and core migration move
 results by tens of percent. Run this twice and compare the `_cv` rows:
 
@@ -108,7 +143,7 @@ environment they were taken in, and the stability gate.
 ### diagnostic counters
 
 DFS recursion and backtrack counts are a separate runtime flag, deliberately kept
-out of the timed path — never benchmark a run with it on:
+out of the timed path. Never benchmark a run with it on:
 
 ```powershell
 .\cpp\build\main.exe QUAIHMTNCEIMSSCR 4 --stats
@@ -137,9 +172,13 @@ out of the timed path — never benchmark a run with it on:
 │   │   ├── board.py
 │   │   ├── client.py
 │   │   ├── config.py
+│   │   ├── results.py
+│   │   ├── share.py
 │   │   ├── solver.py
 │   │   └── writers.py
 │   ├── tests
+│   │   ├── test_results.py
+│   │   ├── test_share.py
 │   │   └── test_solver.py
 │   ├── pyproject.toml
 │   ├── uv.lock

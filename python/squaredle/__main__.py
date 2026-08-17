@@ -30,7 +30,7 @@ async def main() -> None:
         words = solve(board_info)
         logging.info(f"Words found: {len(words)}")
 
-        await client.input_words(words)
+        outcomes = await client.input_words(words)
 
         share_text = await client.get_results()
 
@@ -44,6 +44,7 @@ async def main() -> None:
                     board=board_info,
                     words=words,
                     share_text=share_text,
+                    outcomes=outcomes,
                 )
             )
 

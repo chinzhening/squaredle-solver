@@ -9,6 +9,7 @@ from pymongo import AsyncMongoClient
 
 from squaredle.board import BoardInfo
 from squaredle.config import Config
+from squaredle.results import WordOutcomes
 from squaredle.share import puzzle_date_from_run
 
 # The shape as_document() produces. Not in config.py: an operator has no
@@ -17,7 +18,10 @@ from squaredle.share import puzzle_date_from_run
 #
 # 1: adds puzzle_date and puzzle_date_source. An unversioned document predates
 #    both, and predates any measurement of rejected words.
-SCHEMA_VERSION = 1
+# 2: adds outcomes. Null on a version 1 document, which is not the same as an
+#    empty rejected list: those runs never measured. puzzle_date stays derived
+#    from the share text, so it means the same thing in both versions.
+SCHEMA_VERSION = 2
 
 
 def as_bson_date(day: date | None) -> datetime | None:
@@ -41,16 +45,23 @@ class SolveResult:
     words: list[str]
     share_text: str
     puzzle_date: date | None = None
+    outcomes: WordOutcomes | None = None
     solved_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    # Set by __post_init__ unless puzzle_date was supplied outright.
+    puzzle_date_source: str | None = None
 
     def __post_init__(self) -> None:
         """Derive puzzle_date so no caller can forget to.
 
-        Both inputs the parse needs are already fields here. An explicit value
-        still wins, which is what lets a migration supply its own.
+        From the share text, not the solution key: the key runs a day ahead for
+        the same puzzle, and every stored document is keyed on the share text,
+        so adopting it would leave two conventions in one collection.
+
+        An explicit value still wins, which lets a migration supply its own.
         """
         if self.puzzle_date is None:
             self.puzzle_date = puzzle_date_from_run(self.share_text, self.solved_at)
+            self.puzzle_date_source = "share_text"
 
     def as_document(self) -> dict[str, Any]:
         """Flatten into a document suitable for storage."""
@@ -63,6 +74,12 @@ class SolveResult:
             "word_count": len(self.words),
             "share_text": self.share_text,
             "puzzle_date": as_bson_date(self.puzzle_date),
+            "puzzle_date_source": self.puzzle_date_source,
+            # None, not an empty shape: a run that could not read the solution
+            # measured nothing, which is not the same as rejecting nothing.
+            "outcomes": (
+                self.outcomes.as_document() if self.outcomes is not None else None
+            ),
             "solved_at": self.solved_at,
             "schema_version": SCHEMA_VERSION,
         }
