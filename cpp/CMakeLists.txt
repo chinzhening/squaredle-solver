@@ -40,9 +40,9 @@ endif()
 # Solver sources live in one library so `main` and `bench` provably share
 # them: there is no build-type or define that applies to only one of the two.
 add_library(solver_core STATIC
-    src/utils.cpp
     src/trie.cpp
     src/flat_trie.cpp
+    src/wordlist.cpp
 )
 
 target_compile_features(solver_core PUBLIC cxx_std_20)
@@ -50,7 +50,7 @@ target_compile_features(solver_core PUBLIC cxx_std_20)
 target_include_directories(solver_core PUBLIC ${PROJECT_SOURCE_DIR}/src)
 
 # Absolute, so both executables resolve it regardless of working directory.
-target_compile_definitions(solver_core PUBLIC
+target_compile_definitions(solver_core PRIVATE
     DATA_DIR="${CMAKE_BINARY_DIR}/data"
 )
 

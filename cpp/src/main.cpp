@@ -14,7 +14,8 @@
 #include <vector>
 
 #include "solver.h"
-#include "utils.h"
+#include "trie.h"
+#include "trie_builder.h"
 
 namespace {
 
@@ -124,7 +125,7 @@ int main(int argc, char* argv[]) {
 
         validate_letters(letters);
 
-        Trie wordTrie = load_word_trie();
+        Trie wordTrie = load_word_trie<Trie>();
         TrieAutomaton automaton{wordTrie};
 
         std::unordered_set<std::string> words;

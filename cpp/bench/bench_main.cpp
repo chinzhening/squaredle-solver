@@ -32,7 +32,8 @@
 #include "flat_trie.h"
 #include "solver.h"
 #include "trie.h"
-#include "utils.h"
+#include "trie_builder.h"
+#include "wordlist.h"
 
 #ifdef _WIN32
 // Order matters: windows.h must precede psapi.h.
@@ -86,22 +87,6 @@ struct Representation<FlatTrie> {
 template <typename T>
 using AutomatonFor = typename Representation<T>::Automaton;
 
-/** Builds any representation from an in-memory word list. */
-template <typename T>
-T build_from_words(const std::vector<std::string>& words) {
-    T trie;
-    for (const auto& word : words) {
-        trie.insert(word);
-    }
-    return trie;
-}
-
-/** Read the word lists and build: the full cold load path. */
-template <typename T>
-T load_trie() {
-    return build_from_words<T>(read_words_from_files());
-}
-
 /**
  * @brief Current working-set size, or 0 where unsupported.
  *
@@ -130,7 +115,7 @@ constexpr double kBytesPerMiB = 1024.0 * 1024.0;
 template <typename T>
 void BM_Load(benchmark::State& state) {
     for (auto _ : state) {
-        T trie = load_trie<T>();
+        T trie = load_word_trie<T>();
         benchmark::DoNotOptimize(Representation<T>::handle(trie));
     }
 }
@@ -149,7 +134,7 @@ void BM_Insert(benchmark::State& state) {
     const std::vector<std::string> words = read_words_from_files();
 
     for (auto _ : state) {
-        T trie = build_from_words<T>(words);
+        T trie = build_trie<T>(words);
         benchmark::DoNotOptimize(Representation<T>::handle(trie));
     }
 }
@@ -157,7 +142,7 @@ void BM_Insert(benchmark::State& state) {
 /** Serialize only, against a trie built once outside the timed region. */
 template <typename T>
 void BM_Serialize(benchmark::State& state) {
-    const T trie = load_trie<T>();
+    const T trie = load_word_trie<T>();
 
     for (auto _ : state) {
         auto bytes = trie.serialize();
@@ -170,7 +155,7 @@ void BM_Serialize(benchmark::State& state) {
 /** Deserialize only, against a buffer produced once outside the timed region. */
 template <typename T>
 void BM_Deserialize(benchmark::State& state) {
-    const T trie = load_trie<T>();
+    const T trie = load_word_trie<T>();
     const auto bytes = trie.serialize();
 
     for (auto _ : state) {
@@ -183,7 +168,7 @@ void BM_Deserialize(benchmark::State& state) {
 /** Search only, against a trie built once outside the timed region. */
 template <typename T>
 void BM_Solve(benchmark::State& state, Board board) {
-    const T trie = load_trie<T>();
+    const T trie = load_word_trie<T>();
     const AutomatonFor<T> automaton{trie};
     const std::string letters = board.letters;
 
@@ -207,7 +192,7 @@ void BM_EndToEnd(benchmark::State& state, Board board) {
     const std::string letters = board.letters;
 
     for (auto _ : state) {
-        T trie = load_trie<T>();
+        T trie = load_word_trie<T>();
         const AutomatonFor<T> automaton{trie};
         auto words = basic_solve_board(automaton, letters, board.size);
         benchmark::DoNotOptimize(words);
@@ -228,7 +213,7 @@ void BM_Footprint(benchmark::State& state) {
 
     for (auto _ : state) {
         const std::size_t before = current_rss_bytes();
-        T trie = build_from_words<T>(words);
+        T trie = build_trie<T>(words);
         const std::size_t after = current_rss_bytes();
 
         state.counters["rss_delta_mib"] =
